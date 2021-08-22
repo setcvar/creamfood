@@ -33,32 +33,16 @@ local commands = {
 
 -- [[ COMANDOS ]] --
 
--- obrigado ao remfly por dizer que dava pra usar string.gmatch
-
 local function RCMD(cmd)
-	local index = 0
-
-	local comando, args
-
-	for result in string.gmatch(cmd, "%g+") do
-
-		if debugging then
-			print (result, index)
-		end
-
-		if index == 0 and commands[result] then
-			comando = result
-
-		elseif index == 1 then
-			args = result
+	local splitted = cmd:split(" ")
+	
+	for i,v in pairs(commands) do
+		if splitted[1] == i then
+			commands[i](splitted[2])
 			break
+			end
 		end
-
-		index = index + 1
-	end
-
-	commands[comando](args)
-
+	
 end
 
 local sc = Instance.new("ScreenGui")
