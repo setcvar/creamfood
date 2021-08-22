@@ -33,6 +33,8 @@ local commands = {
 
 -- [[ COMANDOS ]] --
 
+-- obrigado ao remfly por dizer que dava pra usar string.gmatch
+
 local function RCMD(cmd)
 	local index = 0
 
