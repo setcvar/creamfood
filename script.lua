@@ -1,5 +1,17 @@
 local hui = get_hidden_gui or gethui
 
+game.StarterGui:SetCore("SendNotification",{
+	Title = "Creamfood",
+	Text = "Not the current version",
+	Duration = 5
+})
+
+game.StarterGui:SetCore("SendNotification",{
+	Title = "Creamfood",
+	Text = "N",
+	Duration = 5
+})
+
 local players = game.Players
 local lp = players.LocalPlayer
 local lpChar = lp.Character or lp.CharacterAdded:Wait()
