@@ -8,7 +8,7 @@ game.StarterGui:SetCore("SendNotification",{
 
 game.StarterGui:SetCore("SendNotification",{
 	Title = "Creamfood",
-	Text = "N",
+	Text = "Não a versao mais atual",
 	Duration = 5
 })
 
