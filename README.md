@@ -5,3 +5,5 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/GTX1O8OTi/creamfood/m
 ```
 
 Press "[" to focus the textbox
+
+Press Home to toggle the gui
