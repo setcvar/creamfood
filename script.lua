@@ -8,6 +8,8 @@ local lp = players.LocalPlayer
 
 local CAS = game:GetService("ContextActionService")
 
+local debugging = false
+
 local sethiddenproperty = sethiddenproperty or set_hidden_prop
 
 local character = game.Players.LocalPlayer.Character
@@ -150,7 +152,7 @@ local commands = {
 
 		end
 	end,
-
+	
 	["freeze"] = function()
 		for i,v in pairs (character:GetChildren()) do
 			if v:IsA("Part") or v:IsA("BasePart") then
@@ -158,7 +160,7 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["thaw"] = function()
 		for i,v in pairs (character:GetChildren()) do
 			if v:IsA("Part") or v:IsA("BasePart") then
@@ -166,29 +168,29 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["creatorid"] = function()
 		game.Players.LocalPlayer.UserId = game.CreatorId
 	end,
-
+	
 	["exit"] = function()
 		game:GetService("RunService").RenderStepped:Connect(function()
 			while true do end
 		end)
 	end,
-
+	
 	["jump"] = function()
 		local character = game.Players.LocalPlayer.Character
 		character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 	end,
-
+	
 	["view"] = function(arg1)
 		local target = GetPlayer(tostring(arg1))
 		if target then
 			workspace.CurrentCamera.CameraSubject = target.Character.Humanoid
 		end
 	end,
-
+	
 	["hitboxes"] = function()
 		for i,child in pairs(workspace:GetDescendants()) do
 			local sb = Instance.new("SelectionBox")
@@ -197,45 +199,45 @@ local commands = {
 			sb.LineThickness = 0.1
 			sb.Color3 = Color3.fromRGB(math.random(0,255),math.random(0,255),math.random(0,255))
 		end
-
+		
 	end,
-
+	
 	["day"] = function()
 		game.Lighting.ClockTime = 14
 	end,
-
+	
 	["night"] = function()
 		game.Lighting.ClockTime = 0
 	end,
-
+	
 	["loopnight"] = function()
 		loop_night = game:GetService("RunService").Stepped:Connect(function()
 			game.Lighting.ClockTime = 0
 		end)
 	end,
-
+	
 	["unloopnight"] = function()
 		loop_night:Disconnect()
 	end,
-
+	
 	["colorful_world"] = function()
 		for i,v in pairs (workspace:GetDescendants()) do
-
+			
 			if v:IsA("Part") or v:IsA("BasePart") then
 				math.randomseed(math.random(0,214712312))
 				v.Color = Color3.fromRGB(math.random(0,255),math.random(0,255),math.random(0,255))
 			end
-
+			
 		end
 	end,
-
+	
 	["halve"] = function()
 		local character = GetCharacter()
 		if character.Humanoid and character:FindFirstChild("LowerTorso") then
 			character.LowerTorso.WaistRigAttachment:Destroy()
 		end
 	end,
-
+	
 	["legit_esp"] = function()
 		for i,v in pairs(game.Players:GetPlayers()) do
 			if v.UserId ~= game.Players.LocalPlayer.UserId then
@@ -251,7 +253,7 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["shiftspeed"] = function(arg1)
 		local character = GetCharacter()
 		shiftwalking_began = UIS.InputBegan:Connect(function(input)
@@ -259,35 +261,35 @@ local commands = {
 				character.Humanoid.WalkSpeed = tonumber(arg1)
 			end
 		end)
-
+		
 		shiftwalking_end = UIS.InputEnded:Connect(function(input)
 			if input.KeyCode == Enum.KeyCode.LeftShift then
 				character.Humanoid.WalkSpeed = 16
 			end
 		end)
-
+		
 	end,
-
+	
 	["unshiftspeed"] = function()
 		shiftwalking_began:Disconnect()
 		shiftwalking_end:Disconnect()
 	end,
-
+	
 	["loopspeed"] = function(arg1)
 		loop_speed = game:GetService("RunService").RenderStepped:Connect(function()
 			local character = GetCharacter()
 			character.Humanoid.WalkSpeed = tonumber(arg1)
 		end)
 	end,
-
+	
 	["unloopspeed"] = function()
 		loop_speed:Disconnect()
 	end,
-
+	
 	["unview"] = function()
 		workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
 	end,
-
+	
 	["unhitboxes"] = function()
 		for i,v in pairs(workspace:GetDescendants()) do
 			if v:IsA("SelectionBox") then
@@ -295,7 +297,7 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["infjump"] = function()
 		_forcejump = UIS.InputBegan:Connect(function(input, gameProcessed)
 			if input.KeyCode == Enum.KeyCode.Space and not gameProcessed then
@@ -304,11 +306,11 @@ local commands = {
 			end
 		end)
 	end,
-
+	
 	["uninfjump"] = function()
 		_forcejump:Disconnect()
 	end,
-
+	
 	["moveparts"] = function(arg1)
 		for i,v in pairs(workspace:GetChildren()) do
 			if v:IsA("Part") and v.Anchored == false then
@@ -319,11 +321,11 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["unmoveparts"] = function()
 		movingparts:Disconnect()
 	end,
-
+	
 	["advertise"] = function()
 		advertising = true
 		while advertising == true do
@@ -334,11 +336,11 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["unadvertise"] = function()
 		advertising = false
 	end,
-
+	
 	["antiafk"] = function()
 		antiafk = true
 		while antiafk == true do
@@ -353,23 +355,23 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["enablebackpack"] = function()
 		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true)
 	end,
-
+	
 	["enablechat"] = function()
 		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true)
 	end,
-
+	
 	["enableplayerlist"] = function()
 		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)
 	end,
-
+	
 	["enablehealth"] = function()
 		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, true)
 	end,
-
+	
 	["disablebackpack"] = function()
 		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 	end,
@@ -385,7 +387,7 @@ local commands = {
 	["disablehealth"] = function()
 		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
 	end,
-
+	
 	["spin"] = function(speed)
 		local bav = Instance.new("BodyAngularVelocity")
 		bav.Parent = GetCharacter().HumanoidRootPart
@@ -393,45 +395,45 @@ local commands = {
 		bav.P = 20
 		bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
 	end,
-
+	
 	["unspin"] = function()
 		GetCharacter().HumanoidRootPart.BodyAngularVelocity:Destroy()
 	end,
-
+	
 	["clog"] = function()
 		log.Enabled = true
-
+		
 	end,
-
+	
 	["unclog"] = function()
 		log.Enabled = false
 	end,
-
+	
 	["bot_mode"] = function()
 		BotMode()
 	end,
-
+	
 	["unbot_mode"] = function()
 		UnBotMode()
 	end,
-
+	
 	["nosit"] = function()
-		nositting = GetCharacter().Humanoid:GetPropertyChangedSignal("Sit"):Connect(function()
-			if GetCharacter().Humanoid.Sit then
-				character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+		nositting = game:GetService("RunService").RenderStepped:Connect(function()
+			if GetCharacter().Humanoid:GetState() == Enum.HumanoidStateType.Seated or GetCharacter().Humanoid.Sit then
+				ForceJump()
 			end
 		end)
-
+		
 	end,
-
+	
 	["unnosit"] = function()
 		nositting:Disconnect()
 	end,
-
+	
 	["unantiafk"] = function()
 		antiafk:Disconnect()
 	end,
-
+	
 	["sit"] = function()
 		GetCharacter().Humanoid.Sit = true
 	end,
@@ -521,7 +523,7 @@ local function RCMD(cmd)
 	if commands[comando] then
 		commands[comando](args)
 	end
-
+	
 end
 
 -- [[ COMANDOS ]] --
@@ -661,11 +663,42 @@ log_button.TextColor3 = RGB(255,255,255)
 
 log_button.MouseButton1Click:Connect(function()
 	if writefile then
-		writefile("creamfood_chatlog.txt", log_label.Text)
+		writefile("creamfood.txt", log_label.Text)
 	end
 end)
 ------------------------------------------
 
+-- tamanho desejado: 0,283,0,56
+
+local ann = Instance.new("ScreenGui")
+ann.Parent = hui() or game.CoreGui
+
+local ann_frame = Instance.new("Frame")
+ann_frame.BackgroundColor3 = RGB(20,20,20)
+ann_frame.BorderColor3 = RGB(100,100,100)
+ann_frame.Position = UDim2.new(0,0,0.123,0)
+ann_frame.Size = UDim2.new(0,0,0,56)
+ann_frame.Parent = ann
+
+local ann_label = Instance.new("TextLabel")
+ann_label.BackgroundTransparency = 1
+ann_label.Position = UDim2.new(0,0,0,0)
+ann_label.Size = UDim2.new(0,0,0,56)
+ann_label.TextColor3 = RGB(255,255,255)
+ann_label.Text = "You can contact me at navet#2416"
+ann_label.Parent = ann_frame
+ann_label.TextTransparency = 1
+
+local TweenService = game:GetService("TweenService")
+local info = TweenInfo.new(2, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut, 0, true, 0)
+local tween = TweenService:Create(ann_frame, info, {Size = UDim2.new(0,283,0,56)})
+local tween2 = TweenService:Create(ann_label, info, {Size = UDim2.new(0,283,0, 56)})
+local tween3 = TweenService:Create(ann_label, info, {TextTransparency = 0})
+
+tween:Play()
+tween2:Play()
+tween3:Play()
+------------------------------------------
 for i,v in pairs (commands) do		
 	if usage[tostring(i)] then
 		label.Text = label.Text .. "\n" .. tostring(i) .. " " .. usage[tostring(i)]
