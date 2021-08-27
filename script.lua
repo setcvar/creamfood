@@ -532,14 +532,6 @@ local commands = {
 		end
 	end,
 	
-	["firetis"] = function()
-		for i,v in pairs (workspace:GetDescendants()) do
-			if v:IsA("TouchTransmitter") then
-				firetouchinterest(GetCharacter().HumanoidRootPart, v, 0)
-			end
-		end
-	end,
-	
 	["countcommands"] = function()
 		CountCommands()
 	end,
@@ -628,24 +620,24 @@ local commands = {
 					bg.AlwaysOnTop = true
 					bg.Size = v.Size + Vector3.new(.1,.1,.1)
 					v.Transparency = 1
-					
-				elseif v:IsA("Part") or v:IsA("BasePart") and v.Name == "Head" then
-					local bg = Instance.new("BoxHandleAdornment")
-					bg.Adornee = v
-					bg.Parent = v
-					bg.Color = player.TeamColor
-					bg.AlwaysOnTop = true
-					bg.Size = v.Size + Vector3.new(0,.1,.1)
-					v.Transparency = 1
 				end
 			end
+			
+			local bg = Instance.new("BoxHandleAdornment")
+			bg.Adornee = player.Character.Head
+			bg.Parent = player.Character.Head
+			bg.Color = player.TeamColor
+			bg.AlwaysOnTop = true
+			bg.Size = player.Character.Head.Size + Vector3.new(-1,.1,.1)
+			player.Character.Head.Transparency = 1
+			
 		end
 
 		for i,v in pairs (game.Players:GetPlayers()) do
 			if v.UserId ~= lp.UserId then				
 				chams(v)
 			end
-			end
+		end
 
 		chams_playeradded = game.Players.PlayerAdded:Connect(function(plr)
 			chams(plr)
@@ -657,6 +649,9 @@ local commands = {
 			for _,k in pairs (v.Character:GetDescendants()) do
 				if k:IsA("BoxHandleAdornment") then
 					k:Destroy()
+					
+				elseif k:IsA("BasePart") or k:IsA("Part") and k.Name ~= "HumanoidRootPart" then
+					k.Transparency = 0
 				end
 			end
 		end
@@ -688,6 +683,18 @@ local commands = {
 	
 	["serverhop"] = function()
 		game:GetService("TeleportService"):Teleport(game.PlaceId, lp)
+	end,
+	
+	["bhop"] = function()
+		bhopping = game:GetService("RunService").RenderStepped:Connect(function()
+			if GetCharacter().Humanoid:GetState() == Enum.HumanoidStateType.Landed or GetCharacter().Humanoid.FloorMaterial ~= Enum.Material.Air then
+				ForceJump()
+			end
+		end)
+	end,
+	
+	["unbhop"] = function()
+		bhopping:Disconnect()
 	end,
 }
 
@@ -887,7 +894,7 @@ update_label.BackgroundTransparency = 1
 update_label.Position = UDim2.new(0,0,0,0)
 update_label.Size = UDim2.new(0,113,0,52)
 update_label.TextColor3 = RGB(255,255,255)
-update_label.Text = "Developer Branch\nUpdate: " .. LastUpdate
+update_label.Text = "Dev Branch\nUpdate: " .. LastUpdate
 update_label.TextSize = 12
 update_label.Parent = update_frame
 
