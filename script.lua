@@ -870,7 +870,7 @@ textbox.ClearTextOnFocus = false
 
 ------------------------------------------
 
-local LastUpdate = "25/08"
+local LastUpdate = "26/08"
 
 local update_date = Instance.new("ScreenGui")
 update_date.Parent = hui() or game.CoreGui
