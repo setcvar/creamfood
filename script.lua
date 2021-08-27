@@ -1,6 +1,3 @@
-if not game:IsLoaded() then repeat wait() until game:IsLoaded() end
-
-
 local hui = get_hidden_gui or gethui
 
 local HTTPService = game:GetService("HttpService")
@@ -351,7 +348,7 @@ local commands = {
 		while advertising == true do
 			if advertising == true then
 				wait(3)
-				Say("Do you wanna try my admin script? github , com/GTX1O8OTi/creamfood","All")
+				Say("Get good, get CreamFood! github , com/GTX1O8OTi/creamfood","All")
 				--Say("github , com/GTX1O8OTi/creamfood", "All")
 			end
 		end
@@ -659,14 +656,13 @@ local commands = {
 	end,
 	
 	["drugs"] = function()
-		for i,v in pairs (workspace:GetDescendants()) do
+		--[[for i,v in pairs (workspace:GetDescendants()) do
 
 			if v:IsA("Part") or v:IsA("BasePart") then
-				math.randomseed(math.random(0,214712312))
 				v.Color = Color3.fromRGB(math.random(0,255),math.random(0,255),math.random(0,255))
 			end
 
-		end
+		end]]
 		
 		for i,child in pairs(workspace:GetDescendants()) do
 			local sb = Instance.new("SelectionBox")
@@ -674,6 +670,17 @@ local commands = {
 			sb.Adornee = child
 			sb.LineThickness = 0.1
 			sb.Color3 = Color3.fromRGB(math.random(0,255),math.random(0,255),math.random(0,255))
+			
+			if child:IsA("Part") then
+				math.randomseed(math.random(0,214712312))
+				local bg = Instance.new("BoxHandleAdornment")
+				bg.Adornee = child
+				bg.Parent = child
+				bg.Color = BrickColor.new(RGB(math.random(0,255),math.random(0,255),math.random(0,255)))
+				bg.Size = child.Size + Vector3.new(.1,.1,.1)
+				bg.AlwaysOnTop = false
+			end
+			
 		end
 	end,
 	
@@ -870,7 +877,7 @@ textbox.ClearTextOnFocus = false
 
 ------------------------------------------
 
-local LastUpdate = "26/08"
+local LastUpdate = "27/08"
 
 local update_date = Instance.new("ScreenGui")
 update_date.Parent = hui() or game.CoreGui
