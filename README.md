@@ -4,10 +4,10 @@ Contact me if you need help with the script or to report a bug: navet#2416
 
 ```lua
 Stable:
-https://raw.githubusercontent.com/GTX1O8OTi/creamfood/stable/script.lua
+loadstring(game:HttpGet(https://raw.githubusercontent.com/GTX1O8OTi/creamfood/stable/script.lua))()
 
 Developer:
-https://raw.githubusercontent.com/GTX1O8OTi/creamfood/developer/script.lua
+loadstring(https://raw.githubusercontent.com/GTX1O8OTi/creamfood/developer/script.lua))()
 ```
 
 Press "[" to focus the textbox
