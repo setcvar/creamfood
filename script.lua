@@ -1,6 +1,3 @@
-if not game:IsLoaded() then repeat wait() until game:IsLoaded() end
-
-
 local hui = get_hidden_gui or gethui
 
 local HTTPService = game:GetService("HttpService")
@@ -154,7 +151,7 @@ local commands = {
 
 		end
 	end,
-
+	
 	["freeze"] = function()
 		for i,v in pairs (character:GetChildren()) do
 			if v:IsA("Part") or v:IsA("BasePart") then
@@ -162,7 +159,7 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["thaw"] = function()
 		for i,v in pairs (character:GetChildren()) do
 			if v:IsA("Part") or v:IsA("BasePart") then
@@ -170,35 +167,35 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["creatorid"] = function()
 		game.Players.LocalPlayer.UserId = game.CreatorId
 	end,
-
+	
 	["exit"] = function()
 		game:GetService("RunService").RenderStepped:Connect(function()
 			while true do end
 		end)
 	end,
-
+	
 	["jump"] = function()
 		local character = game.Players.LocalPlayer.Character
 		character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 	end,
-
+	
 	["view"] = function(arg1)
 		local target = GetPlayer(tostring(arg1))
 		if target then
 			workspace.CurrentCamera.CameraSubject = target.Character.Humanoid
 		end
-
+		
 		viewing = game.Players.PlayerRemoving:Connect(function(plr)
 			if plr.UserId == target.UserId then
 				workspace.CurrentCamera.CameraSubject = GetCharacter().Humanoid
 			end
 		end)
 	end,
-
+	
 	["hitboxes"] = function()
 		for i,child in pairs(workspace:GetDescendants()) do
 			local sb = Instance.new("SelectionBox")
@@ -207,47 +204,47 @@ local commands = {
 			sb.LineThickness = 0.1
 			sb.Color3 = Color3.fromRGB(math.random(0,255),math.random(0,255),math.random(0,255))
 		end
-
+		
 	end,
-
+	
 	["day"] = function()
 		game.Lighting.ClockTime = 14
 	end,
-
+	
 	["night"] = function()
 		game.Lighting.ClockTime = 0
 	end,
-
+	
 	["loopnight"] = function()
 		loop_night = game:GetService("RunService").Stepped:Connect(function()
 			game.Lighting.ClockTime = 0
 		end)
 	end,
-
+	
 	["unloopnight"] = function()
 		loop_night:Disconnect()
 	end,
-
+	
 	["colorful_world"] = function()
 		for i,v in pairs (workspace:GetDescendants()) do
-
+			
 			if v:IsA("Part") or v:IsA("BasePart") then
 				math.randomseed(math.random(0,214712312))
 				v.Color = Color3.fromRGB(math.random(0,255),math.random(0,255),math.random(0,255))
 			end
-
+			
 		end
 	end,
-
+	
 	["halve"] = function()
 		local character = GetCharacter()
 		if character.Humanoid and character:FindFirstChild("LowerTorso") then
 			character.LowerTorso.WaistRigAttachment:Destroy()
 		end
 	end,
-
+	
 	["esp"] = function()
-
+		
 		local function esp(player)
 			local bg = Instance.new("BillboardGui")
 			bg.Adornee = player.Character.HumanoidRootPart
@@ -261,18 +258,18 @@ local commands = {
 			esp_label.TextColor3 = RGB(255,255,255)
 			esp_label.Parent = bg
 		end
-
+		
 		for i,v in pairs (game.Players:GetPlayers()) do
 			if v.UserId ~= lp.UserId then
 				esp(v)
 			end
 		end
-
+		
 		esp_playeradded = game.Players.PlayerAdded:Connect(function(plr)
 			esp(plr)
 		end)
 	end,
-
+	
 	["shiftspeed"] = function(arg1)
 		local character = GetCharacter()
 		shiftwalking_began = UIS.InputBegan:Connect(function(input)
@@ -280,36 +277,36 @@ local commands = {
 				character.Humanoid.WalkSpeed = tonumber(arg1)
 			end
 		end)
-
+		
 		shiftwalking_end = UIS.InputEnded:Connect(function(input)
 			if input.KeyCode == Enum.KeyCode.LeftShift then
 				character.Humanoid.WalkSpeed = 16
 			end
 		end)
-
+		
 	end,
-
+	
 	["unshiftspeed"] = function()
 		shiftwalking_began:Disconnect()
 		shiftwalking_end:Disconnect()
 	end,
-
+	
 	["loopspeed"] = function(arg1)
 		loop_speed = game:GetService("RunService").RenderStepped:Connect(function()
 			local character = GetCharacter()
 			character.Humanoid.WalkSpeed = tonumber(arg1)
 		end)
 	end,
-
+	
 	["unloopspeed"] = function()
 		loop_speed:Disconnect()
 	end,
-
+	
 	["unview"] = function()
 		workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
 		viewing:Disconnect()
 	end,
-
+	
 	["unhitboxes"] = function()
 		for i,v in pairs(workspace:GetDescendants()) do
 			if v:IsA("SelectionBox") then
@@ -317,7 +314,7 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["infjump"] = function()
 		_forcejump = UIS.InputBegan:Connect(function(input, gameProcessed)
 			if input.KeyCode == Enum.KeyCode.Space and not gameProcessed then
@@ -326,11 +323,11 @@ local commands = {
 			end
 		end)
 	end,
-
+	
 	["uninfjump"] = function()
 		_forcejump:Disconnect()
 	end,
-
+	
 	["moveparts"] = function(arg1)
 		for i,v in pairs(workspace:GetChildren()) do
 			if v:IsA("Part") and v.Anchored == false then
@@ -341,26 +338,26 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["unmoveparts"] = function()
 		movingparts:Disconnect()
 	end,
-
+	
 	["advertise"] = function()
 		advertising = true
 		while advertising == true do
 			if advertising == true then
 				wait(3)
-				Say("Do you wanna try my admin script? github , com/GTX1O8OTi/creamfood","All")
+				Say("Get good, get CreamFood! github , com/GTX1O8OTi/creamfood","All")
 				--Say("github , com/GTX1O8OTi/creamfood", "All")
 			end
 		end
 	end,
-
+	
 	["unadvertise"] = function()
 		advertising = false
 	end,
-
+	
 	["antiafk"] = function()
 		antiafk = true
 		while antiafk == true do
@@ -375,23 +372,23 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["enablebackpack"] = function()
 		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true)
 	end,
-
+	
 	["enablechat"] = function()
 		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true)
 	end,
-
+	
 	["enableplayerlist"] = function()
 		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)
 	end,
-
+	
 	["enablehealth"] = function()
 		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, true)
 	end,
-
+	
 	["disablebackpack"] = function()
 		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 	end,
@@ -407,27 +404,27 @@ local commands = {
 	["disablehealth"] = function()
 		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
 	end,
-
+	
 	["spin"] = function(speed)
 		local bav = Instance.new("BodyAngularVelocity")
 		bav.Parent = GetCharacter().HumanoidRootPart
 		bav.AngularVelocity = Vector3.new(0, tonumber(speed), 0)
 		bav.MaxTorque = Vector3.new(0,math.huge,0)
 	end,
-
+	
 	["unspin"] = function()
-		GetCharacter().HumanoidRootPart.BodyAngularVelocity:Destroy()
+			GetCharacter().HumanoidRootPart.BodyAngularVelocity:Destroy()
 	end,
-
+	
 	["clog"] = function()
 		log.Enabled = true
-
+		
 	end,
-
+	
 	["unclog"] = function()
 		log.Enabled = false
 	end,
-
+	
 	["bot_mode"] = function()
 		local bav = Instance.new("BodyAngularVelocity")
 		bav.Parent = GetCharacter().HumanoidRootPart
@@ -435,95 +432,95 @@ local commands = {
 		bav.MaxTorque = Vector3.new(0,math.huge,0)
 		BotMode()
 	end,
-
+	
 	["unbot_mode"] = function()
 		UnBotMode()
 	end,
-
+	
 	["nosit"] = function()
 		nositting = game:GetService("RunService").RenderStepped:Connect(function()
 			if GetCharacter().Humanoid:GetState() == Enum.HumanoidStateType.Seated or GetCharacter().Humanoid.Sit then
 				ForceJump()
 			end
 		end)
-
+		
 	end,
-
+	
 	["unnosit"] = function()
 		nositting:Disconnect()
 	end,
-
+	
 	["unantiafk"] = function()
 		antiafk:Disconnect()
 	end,
-
+	
 	["sit"] = function()
 		GetCharacter().Humanoid.Sit = true
 	end,
-
+	
 	["norotate"] = function()
 		GetCharacter().Humanoid.AutoRotate = false
 	end,
-
+	
 	["unnorotate"] = function()
 		GetCharacter().Humanoid.AutoRotate = true
 	end,
-
+	
 	["hipheight"] = function(arg1)
 		GetCharacter().Humanoid.HipHeight = tonumber(arg1)
 	end,
-
+	
 	["hheight"] = function(arg1)
 		GetCharacter().Humanoid.HipHeight = tonumber(arg1)
 	end,
-
+	
 	["slopeangle"] = function(arg1)
 		GetCharacter().Humanoid.MaxSlopeAngle = tonumber(arg1)
 	end,
-
+	
 	["walkto"] = function(arg1)
 		local target = GetPlayer(arg1)
 		walkingto = game:GetService("RunService").RenderStepped:Connect(function()
 			GetCharacter().Humanoid:MoveTo(target.Character.HumanoidRootPart.Position)
 		end)
 	end,
-
+	
 	["unwalkto"] = function()
 		walkingto:Disconnect()
 	end,
-
+	
 	["nohats"] = function()
 		GetCharacter().Humanoid:RemoveAccessories()
 	end,
-
+	
 	["platformstand"] = function()
 		GetCharacter().Humanoid.PlatformStand = true
 	end,
-
+	
 
 	["unplatformstand"] = function()
 		GetCharacter().Humanoid.PlatformStand = false
 	end,
-
+	
 	["fullbright"] = function()
 		game.Lighting.Ambient = RGB(255,255,255)
 		game.Lighting.GlobalShadows = false
 	end,
-
+	
 	["nofog"] = function()
 		game.Lighting.FogEnd = math.huge
 	end,
-
+	
 	["loopnofog"] = function()
 		loop_fog = game:GetService("RunService").RenderStepped:Connect(function()
 			game.Lighting.FogEnd = math.huge
 		end)
 	end,
-
+	
 	["unloopnofog"] = function()
 		loop_fog:Disconnect()
 	end,
-
+	
 	["nodisplaynames"] = function()
 		for i,v in pairs(game.Players:GetPlayers()) do
 			if v.Name ~= v.DisplayName then
@@ -531,19 +528,11 @@ local commands = {
 			end
 		end
 	end,
-
-	["firetis"] = function()
-		for i,v in pairs (workspace:GetDescendants()) do
-			if v:IsA("TouchTransmitter") then
-				firetouchinterest(GetCharacter().HumanoidRootPart, v, 0)
-			end
-		end
-	end,
-
+	
 	["countcommands"] = function()
 		CountCommands()
 	end,
-
+	
 	["nocdlimit"] = function()
 		for i,v in pairs (workspace:GetDescendants()) do
 			if v:IsA("ClickDetector") then
@@ -551,7 +540,7 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["removeguis"] = function()
 		for i,v in pairs(lp.PlayerGui:GetChildren()) do
 			if v:IsA("ScreenGui") then
@@ -559,36 +548,36 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["flingstuck"] = function()
-
+		
 		for i,v in pairs (character:GetChildren()) do
 			if v:IsA("Part") or v:IsA("BasePart") then
 				v.Anchored = true
 			end
 		end
-
+		
 		local bav = Instance.new("BodyAngularVelocity")
 		bav.Parent = GetCharacter().HumanoidRootPart
 		bav.AngularVelocity = Vector3.new(0, 900, 0)
 		bav.MaxTorque = Vector3.new(0, math.huge, 0)
 	end,
-
+	
 	["unflingstuck"] = function()
-
+		
 		if GetCharacter().HumanoidRootPart.BodyAngularVelocity then
 			GetCharacter().HumanoidRootPart.BodyAngularVelocity:Destroy()
-
+			
 			for i,v in pairs (character:GetChildren()) do
 				if v:IsA("Part") or v:IsA("BasePart") then
 					v.Anchored = false
 				end
 			end
-
+			
 		end
-
+		
 	end,
-
+	
 	["potatographics"] = function()
 		game.Lighting.FogEnd = math.huge
 		game.Lighting.Ambient = RGB(255,255,255)
@@ -604,10 +593,10 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["unesp"] = function()
 		esp_playeradded:Disconnect()
-
+		
 		for i,v in pairs (game.Players:GetPlayers()) do
 			for _,k in pairs (v.Character:GetDescendants()) do
 				if k:IsA("BillboardGui") then
@@ -616,7 +605,7 @@ local commands = {
 			end
 		end
 	end,
-
+	
 	["chams"] = function()
 		local function chams(player)
 			for i,v in pairs (player.Character:GetChildren()) do
@@ -628,17 +617,17 @@ local commands = {
 					bg.AlwaysOnTop = true
 					bg.Size = v.Size + Vector3.new(.1,.1,.1)
 					v.Transparency = 1
-
-				elseif v:IsA("Part") or v:IsA("BasePart") and v.Name == "Head" then
-					local bg = Instance.new("BoxHandleAdornment")
-					bg.Adornee = v
-					bg.Parent = v
-					bg.Color = player.TeamColor
-					bg.AlwaysOnTop = true
-					bg.Size = v.Size + Vector3.new(0,.1,.1)
-					v.Transparency = 1
 				end
 			end
+			
+			local bg = Instance.new("BoxHandleAdornment")
+			bg.Adornee = player.Character.Head
+			bg.Parent = player.Character.Head
+			bg.Color = player.TeamColor
+			bg.AlwaysOnTop = true
+			bg.Size = player.Character.Head.Size + Vector3.new(-1,.1,.1)
+			player.Character.Head.Transparency = 1
+			
 		end
 
 		for i,v in pairs (game.Players:GetPlayers()) do
@@ -651,43 +640,68 @@ local commands = {
 			chams(plr)
 		end)
 	end,
-
+	
 	["unchams"] = function()
 		for i,v in pairs (game.Players:GetPlayers()) do
 			for _,k in pairs (v.Character:GetDescendants()) do
 				if k:IsA("BoxHandleAdornment") then
 					k:Destroy()
+					
+				elseif k:IsA("BasePart") or k:IsA("Part") and k.Name ~= "HumanoidRootPart" then
+					k.Transparency = 0
 				end
 			end
 		end
 		chams_playeradded:Disconnect()
 	end,
-
+	
 	["drugs"] = function()
-		for i,v in pairs (workspace:GetDescendants()) do
+		--[[for i,v in pairs (workspace:GetDescendants()) do
 
 			if v:IsA("Part") or v:IsA("BasePart") then
-				math.randomseed(math.random(0,214712312))
 				v.Color = Color3.fromRGB(math.random(0,255),math.random(0,255),math.random(0,255))
 			end
 
-		end
-
+		end]]
+		
 		for i,child in pairs(workspace:GetDescendants()) do
 			local sb = Instance.new("SelectionBox")
 			sb.Parent = child
 			sb.Adornee = child
 			sb.LineThickness = 0.1
 			sb.Color3 = Color3.fromRGB(math.random(0,255),math.random(0,255),math.random(0,255))
+			
+			if child:IsA("Part") then
+				math.randomseed(math.random(0,214712312))
+				local bg = Instance.new("BoxHandleAdornment")
+				bg.Adornee = child
+				bg.Parent = child
+				bg.Color = BrickColor.new(RGB(math.random(0,255),math.random(0,255),math.random(0,255)))
+				bg.Size = child.Size + Vector3.new(.1,.1,.1)
+				bg.AlwaysOnTop = false
+			end
+			
 		end
 	end,
-
+	
 	["backtrack"] = function(arg1)
 		settings().Network.IncomingReplicationLag = tonumber(arg1)
 	end,
-
+	
 	["serverhop"] = function()
 		game:GetService("TeleportService"):Teleport(game.PlaceId, lp)
+	end,
+	
+	["bhop"] = function()
+		bhopping = game:GetService("RunService").RenderStepped:Connect(function()
+			if GetCharacter().Humanoid:GetState() == Enum.HumanoidStateType.Landed or GetCharacter().Humanoid.FloorMaterial ~= Enum.Material.Air then
+				ForceJump()
+			end
+		end)
+	end,
+	
+	["unbhop"] = function()
+		bhopping:Disconnect()
 	end,
 }
 
@@ -736,7 +750,7 @@ local usage = {
 	["potatographics"] = "| Your game will look like a 1998 game, dont blame me",
 	["drugs"] = "| yes",
 	["backtrack"] = "| Makes you lag behind; 0 to revert",
-
+	
 }
 -- [[ COMANDOS ]] --
 
@@ -748,11 +762,11 @@ end
 
 function CountCommands()
 	local index = 0
-
+	
 	for i,v in pairs(commands) do
 		index = index + 1
 	end
-
+	
 	print(index)
 end
 
@@ -798,7 +812,7 @@ local function RCMD(cmd)
 	if commands[comando] then
 		commands[comando](args)
 	end
-
+	
 end
 
 -- [[ COMANDOS ]] --
@@ -863,7 +877,7 @@ textbox.ClearTextOnFocus = false
 
 ------------------------------------------
 
-local LastUpdate = "25/08"
+local LastUpdate = "27/08"
 
 local update_date = Instance.new("ScreenGui")
 update_date.Parent = hui() or game.CoreGui
@@ -887,7 +901,7 @@ update_label.BackgroundTransparency = 1
 update_label.Position = UDim2.new(0,0,0,0)
 update_label.Size = UDim2.new(0,113,0,52)
 update_label.TextColor3 = RGB(255,255,255)
-update_label.Text = "Stable Branch \nUpdate: " .. LastUpdate
+update_label.Text = "Stable Branch\nUpdate: " .. LastUpdate
 update_label.TextSize = 12
 update_label.Parent = update_frame
 
