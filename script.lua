@@ -1,4 +1,4 @@
-local Branch = "Dev Branch"
+local Branch = "Stable Branch"
 
 local hui = get_hidden_gui or gethui
 
