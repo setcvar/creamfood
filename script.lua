@@ -1,3 +1,5 @@
+local Branch = "Dev Branch"
+
 local hui = get_hidden_gui or gethui
 
 local HTTPService = game:GetService("HttpService")
@@ -5,6 +7,8 @@ local HTTPService = game:GetService("HttpService")
 local players = game.Players
 
 local lp = players.LocalPlayer
+
+local TweenService = game:GetService("TweenService")
 
 local CAS = game:GetService("ContextActionService")
 
@@ -16,12 +20,7 @@ local character = game.Players.LocalPlayer.Character
 
 local UIS = game:GetService("UserInputService")
 
-local function ChatLog(plr)
-	plr.Chatted:Connect(function(message)
-		--print("Player: " .. plr.Name .. "\n" .. "Message: " .. message .. "\n")
-		log_label.Text = log_label.Text .. plr.Name .. " | " .. "Message: " .. message .. "\n"
-	end)
-end
+local LastDeathLocation = Vector3.new(0,0,0)
 
 -- [[ FUNÇÕES ]] --
 
@@ -37,9 +36,15 @@ local function GetPlayer(Name)
 	return nil
 end
 
+local function SendNotification(message)
+	game.StarterGui:SetCore("SendNotification",message)
+end
+
 local function GetCharacter()
 	return game.Players.LocalPlayer.Character;
 end
+
+local rootpart = GetCharacter().HumanoidRootPart
 
 local function Say(message, speaker)
 	game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(message,speaker)
@@ -47,6 +52,14 @@ end
 
 function RGB(red, green, blue)
 	return Color3.fromRGB(red, green, blue)
+end
+
+
+local function ChatLog(plr)
+	plr.Chatted:Connect(function(message)
+		--print("Player: " .. plr.Name .. "\n" .. "Message: " .. message .. "\n")
+		CL_label.Text = CL_label.Text .. plr.Name .. " | " .. "Message: " .. message .. "\n"
+	end)
 end
 
 -- [[ FUNÇÕES ]] --
@@ -152,18 +165,66 @@ local commands = {
 		end
 	end,
 	
-	["freeze"] = function()
-		for i,v in pairs (character:GetChildren()) do
-			if v:IsA("Part") or v:IsA("BasePart") then
-				v.Anchored = true
+	["freeze"] = function(arg1)
+		if typeof(arg1) == "string" and arg1 == "me" then
+			for i,v in pairs (GetCharacter():GetChildren()) do
+				if v:IsA("Part") or v:IsA("BasePart") then
+					v.Anchored = true
+				end
+			end
+			
+		elseif typeof(arg1) == "string" and arg1 == "others" then
+			for i,v in pairs (game.Players:GetPlayers()) do
+				if v.Name ~= lp.Name then
+					
+					for _,k in pairs (v.Character:GetChildren()) do
+						if k:IsA("Part") or k:IsA("BasePart") then
+							k.Anchored = true
+						end
+					end
+					
+				end
+			end
+			
+		else
+			local target = GetPlayer(tostring(arg1))
+
+			for i,v in pairs (target.Character:GetChildren()) do
+				if v:IsA("Part") or v:IsA("BasePart") then
+					v.Anchored = true
+				end
 			end
 		end
 	end,
 	
-	["thaw"] = function()
-		for i,v in pairs (character:GetChildren()) do
-			if v:IsA("Part") or v:IsA("BasePart") then
-				v.Anchored = false
+	["thaw"] = function(arg1)
+		if typeof(arg1) == "string" and arg1 == "me" then
+			for i,v in pairs (GetCharacter():GetChildren()) do
+				if v:IsA("Part") or v:IsA("BasePart") then
+					v.Anchored = false
+				end
+			end
+
+		elseif typeof(arg1) == "string" and arg1 == "others" then
+			for i,v in pairs (game.Players:GetPlayers()) do
+				if v.Name ~= lp.Name then
+
+					for _,k in pairs (v.Character:GetChildren()) do
+						if k:IsA("Part") or k:IsA("BasePart") then
+							k.Anchored = false
+						end
+					end
+
+				end
+			end
+
+		else
+			local target = GetPlayer(tostring(arg1))
+
+			for i,v in pairs (target.Character:GetChildren()) do
+				if v:IsA("Part") or v:IsA("BasePart") then
+					v.Anchored = false
+				end
 			end
 		end
 	end,
@@ -255,7 +316,7 @@ local commands = {
 			esp_label.Size = UDim2.new(0,200,0,100)
 			esp_label.Text = player.Name
 			esp_label.BackgroundTransparency = 1
-			esp_label.TextColor3 = RGB(255,255,255)
+			esp_label.TextColor3 = Color3.fromRGB(player.TeamColor)
 			esp_label.Parent = bg
 		end
 		
@@ -272,14 +333,14 @@ local commands = {
 	
 	["shiftspeed"] = function(arg1)
 		local character = GetCharacter()
-		shiftwalking_began = UIS.InputBegan:Connect(function(input)
-			if input.KeyCode == Enum.KeyCode.LeftShift then
+		shiftwalking_began = UIS.InputBegan:Connect(function(input,chat)
+			if input.KeyCode == Enum.KeyCode.LeftShift and not chat then
 				character.Humanoid.WalkSpeed = tonumber(arg1)
 			end
 		end)
 		
-		shiftwalking_end = UIS.InputEnded:Connect(function(input)
-			if input.KeyCode == Enum.KeyCode.LeftShift then
+		shiftwalking_end = UIS.InputEnded:Connect(function(input, chat)
+			if input.KeyCode == Enum.KeyCode.LeftShift and not chat then
 				character.Humanoid.WalkSpeed = 16
 			end
 		end)
@@ -348,7 +409,7 @@ local commands = {
 		while advertising == true do
 			if advertising == true then
 				wait(3)
-				Say("Get good, get CreamFood! github , com/GTX1O8OTi/creamfood","All")
+				Say("Are you bored of the same old admin script? Get Creamfood at .gg/uqhDdceHW9","All")
 				--Say("github , com/GTX1O8OTi/creamfood", "All")
 			end
 		end
@@ -373,38 +434,6 @@ local commands = {
 		end
 	end,
 	
-	["enablebackpack"] = function()
-		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true)
-	end,
-	
-	["enablechat"] = function()
-		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true)
-	end,
-	
-	["enableplayerlist"] = function()
-		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)
-	end,
-	
-	["enablehealth"] = function()
-		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, true)
-	end,
-	
-	["disablebackpack"] = function()
-		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
-	end,
-
-	["disablechat"] = function()
-		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
-	end,
-
-	["disableplayerlist"] = function()
-		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
-	end,
-
-	["disablehealth"] = function()
-		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
-	end,
-	
 	["spin"] = function(speed)
 		local bav = Instance.new("BodyAngularVelocity")
 		bav.Parent = GetCharacter().HumanoidRootPart
@@ -414,15 +443,6 @@ local commands = {
 	
 	["unspin"] = function()
 			GetCharacter().HumanoidRootPart.BodyAngularVelocity:Destroy()
-	end,
-	
-	["clog"] = function()
-		log.Enabled = true
-		
-	end,
-	
-	["unclog"] = function()
-		log.Enabled = false
 	end,
 	
 	["bot_mode"] = function()
@@ -689,7 +709,7 @@ local commands = {
 	end,
 	
 	["serverhop"] = function()
-		game:GetService("TeleportService"):Teleport(game.PlaceId, lp)
+		game:GetService("TeleportService"):Teleport(game.PlaceId)
 	end,
 	
 	["bhop"] = function()
@@ -703,6 +723,149 @@ local commands = {
 	["unbhop"] = function()
 		bhopping:Disconnect()
 	end,
+	
+	["fastbhop"] = function(speed)
+		bhopping = game:GetService("RunService").RenderStepped:Connect(function()
+			if GetCharacter().Humanoid:GetState() == Enum.HumanoidStateType.Landed or GetCharacter().Humanoid.FloorMaterial ~= Enum.Material.Air then
+				ForceJump()
+			end
+		end)
+		
+		GetCharacter().Humanoid.WalkSpeed = 100
+	end,
+	
+	["unfastbhop"] = function()
+		bhopping:Disconnect()
+		
+		GetCharacter().Humanoid.WalkSpeed = 16
+		GetCharacter().Humanoid.JumpPower = 50
+	end,
+	
+	["normalslopeangle"] = function()
+		GetCharacter().Humanoid.MaxSlopeAngle = 89
+	end,
+	
+	["changestate"] = function(state)
+		GetCharacter().Humanoid:ChangeState(Enum.HumanoidStateType[state])
+	end,
+	
+	["rgbfog"] = function()
+		rgbfog = game:GetService("RunService").RenderStepped:Connect(function()
+			local TweenService = game:GetService("TweenService")
+			
+			local info = TweenInfo.new(.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, 0, false, 0)
+			
+			local tween = TweenService:Create(game.Lighting, info, {FogColor = RGB(math.random(0,255),math.random(0,255), math.random(0,255))})
+			
+			tween:Play()
+			
+			tween.Completed:Wait()
+			
+		end)
+	end,
+	
+	["stoprgbfog"] = function()
+		rgbfog:Disconnect()
+	end,
+	
+	["rgbambient"] = function()
+		rgbambient = game:GetService("RunService").RenderStepped:Connect(function()
+			local TweenService = game:GetService("TweenService")
+
+			local info = TweenInfo.new(.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, 0, false, 0)
+
+			local tween = TweenService:Create(game.Lighting, info, {Ambient = RGB(math.random(0,255),math.random(0,255), math.random(0,255))})
+
+			tween:Play()
+
+			tween.Completed:Wait()
+
+		end)
+	end,
+	
+	["stoprgbambient"] = function()
+		rgbambient:Disconnect()
+	end,
+	
+	["rgbcolorshift"] = function()
+		rgbcolorshift = game:GetService("RunService").RenderStepped:Connect(function()
+			local TweenService = game:GetService("TweenService")
+
+			local info = TweenInfo.new(.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, 0, false, 0)
+
+			local tween = TweenService:Create(game.Lighting, info, {ColorShift_Bottom = RGB(math.random(0,255),math.random(0,255), math.random(0,255))})
+			local tween2 = TweenService:Create(game.Lighting, info, {ColorShift_Top = RGB(math.random(0,255),math.random(0,255), math.random(0,255))})
+			tween:Play()
+			tween2:Play()
+			tween.Completed:Wait()
+		end)
+	end,
+	
+	["stoprgbcolorshift"] = function()
+		rgbcolorshift:Disconnect()
+	end,
+	
+	["antikick"] = function()
+		local mt = getrawmetatable(game)
+		local oldnamecall = mt.__namecall
+		setreadonly(mt,false)
+		
+		mt.__namecall = newcclosure(function(self,...)
+			if getnamecallmethod() == "Kick" then
+				Rejoin()
+			end
+			return oldnamecall
+		end)
+	end,
+	
+	["discord"] = function()
+		setclipboard("https://discord.gg/uqhDdceHW9")
+		SendNotification({
+			Title = "Creamfood",
+			Text = "Set Discord invite to clipboard",
+			Duration = 5
+		})
+	end,
+	
+	["enable"] = function(arg1)
+		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType[arg1], true)
+	end,
+	
+	["disable"] = function(arg1)
+		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType[arg1], false)
+	end,
+	
+	["stare"] = function(arg1)
+		local target = GetPlayer(arg1)
+		
+		bg = Instance.new("BodyGyro")
+		bg.Parent = GetCharacter().HumanoidRootPart
+		bg.MaxTorque = Vector3.new(math.huge,math.huge,math.huge)
+		gyro = game:GetService("RunService").RenderStepped:Connect(function()
+			bg.CFrame = CFrame.new(GetCharacter().HumanoidRootPart.Position, target.Character.HumanoidRootPart.Position)
+			
+		end)
+		
+	end,
+	
+	["unstare"] = function()
+		gyro:Disconnect()
+		bg:Destroy()
+	end,
+	
+	["tweengoto"] = function(arg1)
+		local target = GetPlayer(arg1)
+		
+		local info = TweenInfo.new(.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut, 0, false, 0)
+		
+		local Tween = TweenService:Create(GetCharacter().HumanoidRootPart, info, {Position = target.Character.HumanoidRootPart})
+		Tween:Play()
+	end,
+	
+	["deathloc"] = function()
+		GetCharacter().HumanoidRootPart.CFrame = LastDeathLocation
+	end,
+	
 }
 
 local usage = {
@@ -716,8 +879,8 @@ local usage = {
 	["clip"] = "| you cant walk through walls",
 	["grav"] = "(number) | TO THE MOON!",
 	["firecds"] = "| haha click go brrr",
-	["freeze"] = "| You freeze without being able to move",
-	["thaw"] = "| Unfreeze",
+	["freeze"] = "(player)| You freeze without being able to move",
+	["thaw"] = "(player)| Unfreeze",
 	["creatorid"] = "| makes your userid the same as the owner",
 	["exit"] = "| I have to explain this one?",
 	["jump"] = "| force yourself to jump",
@@ -745,11 +908,16 @@ local usage = {
 	["platformstand"] = "| I dont know how to explain this",
 	["fullbright"] = "| It's very bright",
 	["nofog"] = "| I dont have anything to explain",
-	["firetis"] = "| It's basically firecds but with touch instead",
 	["nocdlimit"] = "| Remove any Click Detector's activation limit",
 	["potatographics"] = "| Your game will look like a 1998 game, dont blame me",
 	["drugs"] = "| yes",
 	["backtrack"] = "| Makes you lag behind; 0 to revert",
+	["fastbhop"] = "(number) | I dont know how to explain this one",
+	["bhop"] = "| You jump when you land",
+	["changestate"] = "| You change your Humanoid's state",
+	["enable"] = "| Backpack, Chat, Playerlist, Health",
+	["disable"] = "| Backpack, Chat, Playerlist, Health",
+	["deathloc"] = "| You teleport back to where you died"
 	
 }
 -- [[ COMANDOS ]] --
@@ -760,6 +928,10 @@ function ForceJump()
 	commands.jump()
 end
 
+function Rejoin()
+	commands.rejoin()
+end
+
 function CountCommands()
 	local index = 0
 	
@@ -767,7 +939,11 @@ function CountCommands()
 		index = index + 1
 	end
 	
-	print(index)
+	SendNotification({
+		Title = "Creamfood",
+		Text = "Quantidade de comandos: " .. tostring(index),
+		Duration = 5
+	})
 end
 
 function BotMode()
@@ -817,230 +993,88 @@ end
 
 -- [[ COMANDOS ]] --
 
-
-local sgui = Instance.new("ScreenGui")
-sgui.Parent = hui() or game.CoreGui
-sgui.Name = HTTPService:GenerateGUID(false)
-
-local frame1 = Instance.new("Frame")
-frame1.Active = true
-frame1.Draggable = true
-frame1.Selectable = true
-frame1.BackgroundColor3 = Color3.fromRGB(30,30,30)
-frame1.BorderSizePixel = 1
-frame1.BorderColor3 = Color3.fromRGB(50,50,50)
-frame1.Position = UDim2.new(0.354,0,0.439,0)
-frame1.Size = UDim2.new(0,499,0,361)
-frame1.Parent = sgui
-
-local topbar = Instance.new("Frame")
-topbar.BackgroundColor3 = Color3.fromRGB(24,24,24)
-topbar.BorderSizePixel = 0
-topbar.Position = UDim2.new(0,0,-0.001,0)
-topbar.Size = UDim2.new(0,499,0,40)
-topbar.Parent = frame1
-
-local sframe = Instance.new("ScrollingFrame")
-sframe.BackgroundColor3 = RGB(24,24,24)
-sframe.BorderSizePixel = 0
-sframe.Position = UDim2.new(0.03,0,0.142,0)
-sframe.Size = UDim2.new(0,472,0,251)
-sframe.ScrollBarImageColor3 = RGB(255,255,255)
-sframe.Parent = frame1
-sframe.CanvasSize = UDim2.new(0,0,5,0)
-
-local label = Instance.new("TextLabel")
-label.BackgroundTransparency = 1
-label.BorderSizePixel = 0
-label.TextSize = 10
-label.TextColor3 = RGB(255,255,255)
-label.TextXAlignment = Enum.TextXAlignment.Left
-label.TextYAlignment = Enum.TextYAlignment.Top
-label.TextWrapped = true
-label.Text = ""
-label.Position = UDim2.new(0,0,0,0)
-label.Parent = sframe
-label.Size = UDim2.new(0,462,0,1800)
-
-
-local textbox = Instance.new("TextBox")
-textbox.BackgroundColor3 = RGB(24,24,24)
-textbox.BorderSizePixel = 0
-textbox.ClearTextOnFocus = false
-textbox.Position = UDim2.new(0.03,0,0.86,0)
-textbox.Size = UDim2.new(0,473,0,40)
-textbox.Text = ""
-textbox.Parent = frame1
-textbox.TextSize = 15
-textbox.TextColor3 = RGB(255,255,255)
-textbox.ClearTextOnFocus = false
-
-------------------------------------------
-
-local LastUpdate = "27/08"
-
-local update_date = Instance.new("ScreenGui")
-update_date.Parent = hui() or game.CoreGui
-
-local update_frame = Instance.new("Frame")
-update_frame.BackgroundColor3 = RGB(30,30,30)
-update_frame.BorderSizePixel = 0
-update_frame.Position = UDim2.new(0.869,0,0.892,0)
-update_frame.Size = UDim2.new(0,113,0,52)
-update_frame.Parent = update_date
-
-local update_frame2 = Instance.new("Frame")
-update_frame2.BackgroundColor3 = RGB(0,255,0)
-update_frame2.BorderSizePixel = 0
-update_frame2.Position = UDim2.new(-0.007,0,0.892,0)
-update_frame2.Size = UDim2.new(0,113,0,5)
-update_frame2.Parent = update_frame
-
-local update_label = Instance.new("TextLabel")
-update_label.BackgroundTransparency = 1
-update_label.Position = UDim2.new(0,0,0,0)
-update_label.Size = UDim2.new(0,113,0,52)
-update_label.TextColor3 = RGB(255,255,255)
-update_label.Text = "Stable Branch\nUpdate: " .. LastUpdate
-update_label.TextSize = 12
-update_label.Parent = update_frame
-
-------------------------------------------
-log = Instance.new("ScreenGui")
-
-log.Parent = hui() or game.CoreGui
-log.Enabled = false
-
-local log_frame = Instance.new("Frame")
-log_frame.BackgroundColor3 = RGB(30,30,30)
-log_frame.BorderSizePixel = 1
-log_frame.Parent = log
-log_frame.Position = UDim2.new(0.019,0,0.477,0)
-log_frame.Size = UDim2.new(0,461,0,338)
-log_frame.BorderColor3 = RGB(100,100,100)
-log_frame.Active = true
-log_frame.Selectable = true
-log_frame.Draggable = true
-
-local log_sframe = Instance.new("ScrollingFrame")
-log_sframe.BackgroundColor3 = RGB(20,20,20)
-log_sframe.BorderSizePixel = 0
-log_sframe.Position = UDim2.new(0,0,0.17,0)
-log_sframe.Size = UDim2.new(0,461,0,223)
-log_sframe.ScrollBarImageColor3 = RGB(255,255,255)
-log_sframe.CanvasSize = UDim2.new(0,0,20,0)
-log_sframe.Parent = log_frame
-
-log_label = Instance.new("TextLabel")
-log_label.BackgroundTransparency = 1
-log_label.Position = UDim2.new(0.011,0,0,0)
-log_label.Parent = log_sframe
-log_label.Size = UDim2.new(0,450,0,5000)
-log_label.Text = ""
-log_label.TextColor3 = RGB(255,255,255)
-log_label.TextWrapped = true
-log_label.TextSize = 10
-log_label.TextXAlignment = Enum.TextXAlignment.Left
-log_label.TextYAlignment = Enum.TextYAlignment.Top
-
-local log_topbar = Instance.new("Frame")
-log_topbar.BackgroundColor3 = RGB(24,24,24)
-log_topbar.BorderSizePixel = 0
-log_topbar.Position = UDim2.new(0,0,-0.001,0)
-log_topbar.Size = UDim2.new(0,460,0,40)
-log_topbar.Parent = log_frame
-
-local log_button = Instance.new("TextButton")
-log_button.Parent = log_frame
-log_button.BackgroundColor3 = RGB(24,24,24)
-log_button.BorderSizePixel = 0
-log_button.Position = UDim2.new(0.735,0,0.865,0)
-log_button.Size = UDim2.new(0,103,0,28)
-log_button.Text = "Save to .txt file"
-log_button.TextColor3 = RGB(255,255,255)
-
-local log_clear = Instance.new("TextButton")
-log_clear.Parent = log_frame
-log_clear.BackgroundColor3 = RGB(24,24,24)
-log_clear.BorderSizePixel = 0
-log_clear.Position  = UDim2.new(0.486,0,0.865,0)
-log_clear.Size = UDim2.new(0,103,0,28)
-log_clear.Text = "Clear"
-log_clear.TextColor3 = RGB(255,255,255)
-
-log_clear.MouseButton1Click:Connect(function()
-	log_label.Text = ""
-end)
-
-log_button.MouseButton1Click:Connect(function()
-	if writefile then
-		writefile("creamfood.txt", log_label.Text)
+local function CreateInstance(cls,props)
+	local inst = Instance.new(cls)
+	for i,v in pairs(props) do
+		inst[i] = v
 	end
+	return inst
+end
+
+local StartPage = CreateInstance('ScreenGui',{DisplayOrder=0,Enabled=true,ResetOnSpawn=true,Name='StartPage', Parent=hui() or game.CoreGui})
+local Start = CreateInstance('Frame',{Style=Enum.FrameStyle.Custom,Active=false,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(0.117647, 0.117647, 0.117647),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=0,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0.30462727, 0, 0.28957057, 0),Rotation=0,Selectable=false,Size=UDim2.new(0, 608, 0, 342),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name = 'Start',Parent = StartPage})
+local Start_Label = CreateInstance('TextLabel',{Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size32,Text='Creamfood',TextColor3=Color3.new(1, 1, 1),TextScaled=false,TextSize=30,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=true,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,Active=false,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=1,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=1,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0.335526317, 0, 0.22807017, 0),Rotation=0,Selectable=false,Size=UDim2.new(0, 200, 0, 50),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='Start_Label',Parent = Start})
+local Start_Button = CreateInstance('TextButton',{Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size24,Text='Start',TextColor3=Color3.new(0, 0, 0),TextScaled=false,TextSize=20,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,AutoButtonColor=true,Modal=false,Selected=false,Style=Enum.ButtonStyle.Custom,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(0, 0.611765, 0.521569),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=0,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0.375, 0, 0.526315808, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 152, 0, 38),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='Start_Button',Parent = Start})
+local branch = CreateInstance('TextLabel',{Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size24,Text='Dev Branch',TextColor3=Color3.new(1, 1, 1),TextScaled=false,TextSize=20,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=true,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,Active=false,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=1,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=1,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0.773026288, 0, 0.903508782, 0),Rotation=0,Selectable=false,Size=UDim2.new(0, 138, 0, 33),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='branch',Parent = Start})
+local credits = CreateInstance('TextLabel',{Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size24,Text='Contact me at navet#2416',TextColor3=Color3.new(1, 1, 1),TextScaled=false,TextSize=20,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=true,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,Active=false,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=1,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=1,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0, 0, 0.903508782, 0),Rotation=0,Selectable=false,Size=UDim2.new(0, 185, 0, 33),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='credits',Parent = Start})
+local Main = CreateInstance('Frame',{Style=Enum.FrameStyle.Custom,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(0.117647, 0.117647, 0.117647),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=0,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0.151046276, 0, 0.369503051, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 608, 0, 342),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=false,ZIndex=1,Name = 'Main',Parent = StartPage})
+local Main_label = CreateInstance('TextLabel',{Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size28,Text='Creamfood',TextColor3=Color3.new(1, 1, 1),TextScaled=false,TextSize=25,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,Active=false,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=1,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=1,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0.016447369, 0, 0, 0),Rotation=0,Selectable=false,Size=UDim2.new(0, 120, 0, 50),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='Main_label',Parent = Main})
+local CommandsPanel = CreateInstance('Frame',{Style=Enum.FrameStyle.Custom,Active=false,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(0.117647, 0.117647, 0.117647),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=0,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0.279605269, 0, 0.201754376, 0),Rotation=0,Selectable=false,Size=UDim2.new(0, 426, 0, 259),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name = 'CommandsPanel',Parent = Main})
+local CMDS_SF = CreateInstance('ScrollingFrame',{BottomImage='rbxasset://textures/ui/Scroll/scroll-bottom.png',CanvasPosition=Vector2.new(0, 0),CanvasSize=UDim2.new(0, 0, 15, 0),MidImage='rbxasset://textures/ui/Scroll/scroll-middle.png',ScrollBarThickness=12,ScrollingEnabled=true,TopImage='rbxasset://textures/ui/Scroll/scroll-top.png',Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(0.0941176, 0.0941176, 0.0941176),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=0,ClipsDescendants=true,Draggable=false,Position=UDim2.new(0, 0, 0, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 426, 0, 212),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='CMDS_SF',Parent = CommandsPanel})
+local CMDS_LABEL = CreateInstance('TextLabel',{Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size14,Text='',TextColor3=Color3.new(1, 1, 1),TextScaled=false,TextSize=16,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Left,TextYAlignment=Enum.TextYAlignment.Top,Active=false,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=1,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=0,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0, 0, 0, 0),Rotation=0,Selectable=false,Size=UDim2.new(0, 413, 0, 3884),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='CMDS_LABEL',Parent = CMDS_SF})
+local TextBox = CreateInstance('TextBox',{ClearTextOnFocus=true,Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size24,MultiLine=false,Text='',TextColor3=Color3.new(1, 1, 1), PlaceholderText='', PlaceholderColor3=Color3.new(0.7, 0.7, 0.7),TextScaled=false,TextSize=20,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=true,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(0.0941176, 0.0941176, 0.0941176),BackgroundTransparency=0,BorderColor3=Color3.new(0.137255, 0.137255, 0.137255),BorderSizePixel=0,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0, 0, 0.849420965, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 426, 0, 39),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='TextBox',Parent = CommandsPanel})
+local Commands = CreateInstance('TextButton',{Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size28,Text='Commands',TextColor3=Color3.new(1, 1, 1),TextScaled=false,TextSize=25,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,AutoButtonColor=true,Modal=false,Selected=false,Style=Enum.ButtonStyle.Custom,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(0.117647, 0.117647, 0.117647),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=0,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0.016562663, 0, 0.204678357, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 150, 0, 50),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='Commands',Parent = Main})
+local Frame = CreateInstance('Frame',{Style=Enum.FrameStyle.Custom,Active=false,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(0, 0.611765, 0.521569),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=0,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0.016447369, 0, 0.146198824, 0),Rotation=0,Selectable=false,Size=UDim2.new(0, 589, 0, 4),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name = 'Frame',Parent = Main})
+local ChatLogger = CreateInstance('TextButton',{Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size28,Text='Chat Logger',TextColor3=Color3.new(1, 1, 1),TextScaled=false,TextSize=25,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,AutoButtonColor=true,Modal=false,Selected=false,Style=Enum.ButtonStyle.Custom,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(0.117647, 0.117647, 0.117647),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=0,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0.0159999952, 0, 0.386257321, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 150, 0, 50),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='ChatLogger',Parent = Main})
+local ChatLoggerPanel = CreateInstance('Frame',{Style=Enum.FrameStyle.Custom,Active=false,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(0.117647, 0.117647, 0.117647),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=0,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0.279605269, 0, 0.201754376, 0),Rotation=0,Selectable=false,Size=UDim2.new(0, 426, 0, 259),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=false,ZIndex=1,Name = 'ChatLoggerPanel',Parent = Main})
+local CL_SF = CreateInstance('ScrollingFrame',{BottomImage='rbxasset://textures/ui/Scroll/scroll-bottom.png',CanvasPosition=Vector2.new(0, 0),CanvasSize=UDim2.new(0, 0, 15, 0),MidImage='rbxasset://textures/ui/Scroll/scroll-middle.png',ScrollBarThickness=12,ScrollingEnabled=true,TopImage='rbxasset://textures/ui/Scroll/scroll-top.png',Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(0.0941176, 0.0941176, 0.0941176),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=0,ClipsDescendants=true,Draggable=false,Position=UDim2.new(0, 0, 0, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 426, 0, 216),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='CL_SF',Parent = ChatLoggerPanel})
+CL_label = CreateInstance('TextLabel',{Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size14,Text='',TextColor3=Color3.new(1, 1, 1),TextScaled=false,TextSize=14,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Left,TextYAlignment=Enum.TextYAlignment.Top,Active=false,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=1,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=0,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0, 0, 0, 0),Rotation=0,Selectable=false,Size=UDim2.new(0, 413, 0, 3884),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='CL_label',Parent = CL_SF})
+local Main_label2 = CreateInstance('TextLabel',{Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size24,Text='Dev Branch',TextColor3=Color3.new(1, 1, 1),TextScaled=false,TextSize=20,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=true,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,Active=false,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=1,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=1,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0.049342107, 0, 0.926900566, 0),Rotation=0,Selectable=false,Size=UDim2.new(0, 109, 0, 25),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='Main_label2',Parent = Main})
+local save = CreateInstance('TextButton',{Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size14,Text='Save to .txt file',TextColor3=Color3.new(1, 1, 1),TextScaled=false,TextSize=14,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,AutoButtonColor=true,Modal=false,Selected=false,Style=Enum.ButtonStyle.Custom,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(0.0941176, 0.0941176, 0.0941176),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=0,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0.779342711, 0, 0.877570212, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 94, 0, 31),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='save',Parent = ChatLoggerPanel})
+local clear = CreateInstance('TextButton',{Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size14,Text='Clear',TextColor3=Color3.new(1, 1, 1),TextScaled=false,TextSize=14,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,AutoButtonColor=true,Modal=false,Selected=false,Style=Enum.ButtonStyle.Custom,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(0.0941176, 0.0941176, 0.0941176),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=0,ClipsDescendants=false,Draggable=false,Position=UDim2.new(0.521126747, 0, 0.877570212, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 94, 0, 31),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='clear',Parent = ChatLoggerPanel})
+
+Main.Draggable = true
+
+Start_Button.MouseButton1Click:Connect(function()
+	Start.Visible = false
+	Main.Visible = true
 end)
-------------------------------------------
 
--- tamanho desejado: 0,283,0,56
+ChatLogger.MouseButton1Click:Connect(function()
+	CommandsPanel.Visible = false
+	ChatLoggerPanel.Visible = true
+end)
 
-local ann = Instance.new("ScreenGui")
-ann.Parent = hui() or game.CoreGui
+Commands.MouseButton1Click:Connect(function()
+	CommandsPanel.Visible = true
+	ChatLoggerPanel.Visible = false
+end)
 
-local ann_frame = Instance.new("Frame")
-ann_frame.BackgroundColor3 = RGB(20,20,20)
-ann_frame.BorderColor3 = RGB(100,100,100)
-ann_frame.Position = UDim2.new(0,0,0.123,0)
-ann_frame.Size = UDim2.new(0,0,0,56)
-ann_frame.Parent = ann
-
-local ann_label = Instance.new("TextLabel")
-ann_label.BackgroundTransparency = 1
-ann_label.Position = UDim2.new(0,0,0,0)
-ann_label.Size = UDim2.new(0,0,0,56)
-ann_label.TextColor3 = RGB(255,255,255)
-ann_label.Text = "You can contact me at navet # 2416"
-ann_label.Parent = ann_frame
-ann_label.TextTransparency = 1
-
-local TweenService = game:GetService("TweenService")
-local info = TweenInfo.new(2, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut, 0, true, 0)
-local tween = TweenService:Create(ann_frame, info, {Size = UDim2.new(0,283,0,56)})
-local tween2 = TweenService:Create(ann_label, info, {Size = UDim2.new(0,283,0, 56)})
-local tween3 = TweenService:Create(ann_label, info, {TextTransparency = 0})
-
-tween:Play()
-tween2:Play()
-tween3:Play()
-------------------------------------------
 for i,v in pairs (commands) do		
 	if usage[tostring(i)] then
-		label.Text = label.Text .. "\n" .. tostring(i) .. " " .. usage[tostring(i)]
+		CMDS_LABEL.Text = CMDS_LABEL.Text .. "\n" .. tostring(i) .. " " .. usage[tostring(i)]
 	else
-		label.Text = label.Text .. "\n" .. tostring(i) .. " " .. "| No description or I have to add one"
+		CMDS_LABEL.Text = CMDS_LABEL.Text .. "\n" .. tostring(i) .. " " .. "| No description or I have to add one"
 	end
 end
 
-CAS:BindAction("focus", function()
-	textbox:CaptureFocus()
-	game:GetService("RunService").RenderStepped:Wait()
-	textbox.Text = ""
+--------------------------------------------
+
+CAS:BindAction("Focus", function()
+	if CommandsPanel.Visible then
+		TextBox:CaptureFocus()
+		game:GetService("RunService").RenderStepped:Wait()
+		TextBox.Text = ""
+	end
 end, false, Enum.KeyCode.RightBracket)
 
-local function ToggleWindow(actionName, inputState)
-	if actionName == "yes" and inputState == Enum.UserInputState.Begin then
-		frame1.Visible = not frame1.Visible
-	end
-end
-
-CAS:BindAction("yes", ToggleWindow, false, Enum.KeyCode.Home)
-
-textbox.FocusLost:Connect(function(enter)
+TextBox.FocusLost:Connect(function(enter)
 	if enter then
-		RCMD(textbox.Text)
-		textbox.Text = ""
+		RCMD(TextBox.Text)
+		TextBox.Text = ""
 	end
 end)
 
 character.Humanoid.Died:Connect(function()
+	LastDeathLocation = rootpart.CFrame
 	lp.CharacterAdded:Wait()
-	commands:clip()
-	commands:unnosit()
+	
+	
+	if noclipping then
+		commands:clip()
+	end
+	
+	if nositting then
+		commands:unnosit()
+	end
 end)
