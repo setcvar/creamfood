@@ -1,0 +1,103 @@
+local commands = {}
+
+local function addcmd(cmd , data)
+    table.insert(commands, data)
+end
+
+local function GetPlayer(Name)
+	for _,v in ipairs(game.Players:GetPlayers()) do
+
+		if string.lower(v.Name):match("^" .. string.lower(Name)) then
+			return v
+		end
+
+	end
+	return nil
+end
+
+local function findcommand(cmd_name, any_aliases)
+    for i,v in pairs (commands) do
+        if tostring(i) == tostring(cmd_name) then
+            return true
+        end
+        for i2, v2 in pairs (any_aliases) do
+            if commands[i].alias == i2 then
+                return tostring(commands[i])
+            end
+        end
+    end
+    return false
+end
+
+local function FindPlayer(PLAYERNAME)
+    if PLAYERNAME == "me" then
+        return game.Players.LocalPlayer.Name
+
+    elseif PLAYERNAME == "others" then
+        return 0
+
+    elseif PLAYERNAME == "all" then
+        return 1
+    end
+end
+
+local function run_command(cmd, argument)
+    local command, arguments = "", nil
+    local index = 0
+    for result in string.gmatch(cmd, "%g+") do
+        if index == 0 then
+            command = result
+        elseif index == 1 then
+            arguments = result
+        elseif index >= 2 then
+            arguments = arguments + result
+        end
+
+        index = index + 1
+    end
+
+    if findcommand(command, command.alias) then
+        commands[command](arguments)
+    else
+        local aliased_command = findcommand(command, command.alias)
+        commands[aliased_command](arguments)
+    end
+
+end
+
+local function detect_argument_type(argument)
+    if typeof(argument) == "string" then
+        return 0
+
+    elseif typeof(argument) == "number" then
+        return 1
+
+    elseif typeof(argument) == nil then
+        return -1
+    end
+end
+
+local function _print(argument_string)
+    if detect_argument_type(argument_string) == -1 then return end
+    print(argument_string)
+end
+
+addcmd("print", {
+    name = "print",
+    alias = {"p"},
+    argument_type = "string",
+    callback = _print
+})
+
+local function WalkSpeed(argument_int)
+    if detect_argument_type(argument_int) == 0 or detect_argument_type(argument_int) == 0 then return end
+    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 
+end
+
+addcmd("speed", {
+    name = "speed",
+    alias = {"ws"},
+    argument_type = "number",
+    callback = WalkSpeed
+})
+
