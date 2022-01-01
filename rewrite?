@@ -1,7 +1,13 @@
 local commands = {}
+local alias = {}
 
-local function addcmd(cmd , data)
+local function mAddCMD(cmd , data)
     table.insert(commands, data)
+end
+
+local function addcmd(cmd, _alias, callback)
+    commands[cmd] = callback
+    alias[_alias] = cmd
 end
 
 local function GetPlayer(Name)
@@ -20,6 +26,11 @@ local function findcommand(cmd_name)
         if tostring(i) == tostring(cmd_name) then
             print("true "..i)
             return true
+
+        else
+            for index, value in pairs (alias) do
+                --if value = i
+            end
         end
     end
     return false
@@ -37,37 +48,31 @@ local function FindPlayer(PLAYERNAME)
     end
 end
 
-local function run_command(cmd, argument)
+local function run_command(cmd)
     local command
     local arguments
     local _index = 0
     for result in string.gmatch(cmd, "%g+") do
-        if _index == 0 then
+        if _index == 0 and commands[result] then
             command = result
+
+        elseif _index == 0 and not commands[result] then
+            for i,v in pairs (alias) do
+                if i == result then command = v; break end
+            end
+
         elseif _index == 1 then
             arguments = result
+
+        elseif _index >= 2 then
+            arguments = arguments .. " " ..result
         end
         _index = _index + 1
     end
 
     if commands[command] then
-        commands[command].callback(arguments)
+        commands[command](arguments)
     end
-
-    if not commands[command] then
-        
-        for index, value in pairs (commands) do
-            for index2, value2 in pairs (value.alias) do
-                if value2 == command then
-                    --
-                    commands[index].callback(arguments)
-                end
-            end
-
-        end
-
-    end
-
 end
 
 local function detect_argument_type(argument)
@@ -87,23 +92,4 @@ local function _print(argument_string)
     print(argument_string)
 end
 
-addcmd("print", {
-    name = "print",
-    alias = {"p"},
-    argument_type = "string",
-    callback = _print
-})
-
-local function WalkSpeed(argument_int)
-    if detect_argument_type(argument_int) == 0 or detect_argument_type(argument_int) == 0 then return end
-    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = argument_int
-end
-
-addcmd("speed", {
-    name = "speed",
-    alias = {"ws"},
-    argument_type = "number",
-    callback = WalkSpeed
-})
-
-run_command("p", "yes")
+addcmd("print", "p", print)
