@@ -463,6 +463,13 @@ local function UnWalkto ( )
 	if table.find ( events, "walkto" ) then getgenv().walkto:Disconnect(); table.remove ( events, table.find ( events, "walkto" ) )
 end
 
+local function Commands ( )
+	print ( "Comandos: \n" )
+	for index, value in pairs ( commands ) do
+		print ( index )
+	end
+end
+
 -- // commands
 
 addcmd ( "print", "p", _print )
@@ -503,6 +510,7 @@ addcmd ( "nosit", "", NoSit )
 addcmd ( "walkto", "", WalkTo )
 addcmd ( "unnosit","nnsit", UnNosit )
 addcmd ( "unwalkto", "", UnWalkto )
+addcmd ( "cmds", "help", Commands )
 
 -- // commands
 
