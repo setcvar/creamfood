@@ -71,9 +71,12 @@ local function run_command(cmd)
         _index = _index + 1
     end
 
-    if commands[command] then
-        commands[command](arguments)
+    local function run()
+        if commands[command] then
+            commands[command](arguments)
+        end
     end
+    coroutine.resume(coroutine.create(run))
 end
 
 local function _print(  )
@@ -125,6 +128,10 @@ end
 
 local function clearevents ( )
     table.clear(events)
+end
+
+local function highgraphics ( )
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/GTX1O8OTi/Graphics/experimental/new.lua", true))()
 end
 
 -- // commands
