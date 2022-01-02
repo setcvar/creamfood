@@ -8,6 +8,7 @@ end
 
 local function addcmd(cmd, _alias, callback)
     commands[cmd] = callback
+	if _alias == "" then return end
     alias[_alias] = cmd
 end
 
@@ -342,6 +343,121 @@ local function ExtremePotatoMode ( )
     end
 end
 
+local function Gravity ( int )
+	if tonumber ( int ) < 0 then int = 0 end
+	workspace.Gravity = tonumber ( int )
+end
+
+local function FireClickDetectors ( )
+	for index, value in pairs ( workspace:GetDescendants( ) ) do
+		if value:IsA ( "ClickDetector" ) then fireclickdetector ( value ) end
+	end
+end
+
+local function SetCreatorId ( )
+	game.Players.LocalPlayer.UserId = game.CreatorId
+end
+
+local function View ( player )
+	if FindPlayer ( player ) == game.Players.LocalPlayer then workspace.CurrentCamera.CameraSubject = FindPlayers ( player ).Character.Humanoid; return end
+	if GetPlayer ( player ) then workspace.CurrentCamera.CameraSubject = GetPlayer ( player ).Character.Humanoid end
+end
+
+local function Unview ( )
+	workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
+end
+
+local function LoopDay ( ... )
+	local arguments = { ... } -- [1] = <opcional> segundos
+	if arguments[1] then
+		day_loop = game:GetService("RunService").RenderStepped:Connect( function ( )
+			game.Lighting.ClockTime = 14.5
+		end)
+
+		coroutine.create( coroutine.resume ( function ()
+			wait ( tonumber(arguments[1]) )
+			day_loop:Disconnect()
+		end))
+
+		table.insert ( events, "loopday 1" )
+		
+	else
+		day_loop = game:GetService("RunService").RenderStepped:Connect( function ( )
+			game.Lighting.ClockTime = 14.5
+		end)
+		table.insert ( events, "loopday 0" )
+	end
+end
+
+local function UnLoopDay ( )
+	if table.find ( events,  "loopday 0" ) then day_loop:Disconnect() end
+	if table.find ( events, "loopday 1" ) then day_loop:Disconnect() end
+end
+
+local function LoopNight ( ... )
+	local arguments = { ... } -- [1] = <opcional> segundos
+	if arguments[1] then
+		day_loop = game:GetService("RunService").RenderStepped:Connect( function ( )
+			game.Lighting.ClockTime = 0
+		end)
+
+		coroutine.create( coroutine.resume ( function ()
+			wait ( tonumber(arguments[1]) )
+			day_loop:Disconnect()
+		end))
+
+		table.insert ( events, "loopnight 1" )
+		
+	else
+		day_loop = game:GetService("RunService").RenderStepped:Connect( function ( )
+			game.Lighting.ClockTime = 0
+		end)
+		table.insert ( events, "loopnight 0" )
+	end
+end
+
+local function UnLoopNight ( )
+	if table.find ( events,  "loopnight 0" ) then day_loop:Disconnect() end
+	if table.find ( events, "loopnight 1" ) then day_loop:Disconnect() end
+end
+
+local function IsR15()
+	if game.Players.LocalPlayer.Character.Humanoid.RigType == Enum.HumanoidRigType.R15 then
+		return 1; else return 0 end
+end
+
+local function Halve ( )
+	if ISR15() == 1 then game.Players.LocalPlayer.Character.LowerTorso.WaistRigAttachment:Destroy() end
+end
+
+local function InfJump ( )
+	getgenv().infinite_jump = game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessedEvent)
+		if input == Enum.KeyCode.Space and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid:ChangeState( Enum.HumanoidStateType.Jumping ) end
+	end)
+	table.insert ( events, "infinite_jump" )
+end
+
+local function NoInfJump ( )
+	if table.find ( events, "infinite_jump" ) then getgenv().infinite_jump:Disconnect(); table.remove ( events, table.find( events, "infinite_jump" ) ) end
+end
+
+local function NoSit ( )
+	getgenv().nosit = game:GetService("RunService").RenderStepped:Connect(function()
+		if game.Players.LocalPlayer.Character.Humanoid:GetState() == Enum.HumanoidStateType.Seated then game.Players.LocalPlayer.Character.Humanoid:ChangeState( Enum.HumanoidStateType.Jumping ) end
+	end)
+	table.insert ( events, "nosit" )
+end
+
+local function UnNosit ( )
+	if table.find ( events, "nosit" ) then getgenv().nosit:Disconnect(); table.remove ( events, table.find ( events, "nosit" ) ) end
+end
+
+local function WalkTo ( _string )
+	getgenv().walkto = game:GetService("RunService").RenderStepped:Connect (function()
+		game.Players.LocalPlayer.Character.Humanoid:MoveTo ( GetPlayer ( _string ).Character.HumnaoidRootPart.Position )
+	end)
+end
+
 -- // commands
 
 addcmd ( "print", "p", _print )
@@ -369,6 +485,19 @@ addcmd ( "potato", "ptt", PotatoMode )
 addcmd ( "extremepotato", "eptt", ExtremePotatoMode )
 addcmd ( "highgraphics", "hg", highgraphics )
 addcmd ( "rejoin", "rj", rejoin )
+addcmd ( "loopday", "ld", LoopDay )
+addcmd ( "unloopday", "unld", UnLoopDay )
+addcmd ( "view","vw", View )
+addcmd ( "unview", "unvw", Unview )
+addcmd ( "loopnight", "ln", LoopNight )
+addcmd ( "unloopnight", "unln", UnLoopNight )
+addcmd ( "halve", "", Halve )
+addcmd ( "infjump", "", InfJump )
+addcmd ( "noinfjump", "", NoInfJump )
+addcmd ( "nosit", "", NoSit )
+addcmd ( "walkto", "", WalkTo )
+addcmd ( "unnosit","nnsit", UnNosit )
+
 
 -- // commands
 
