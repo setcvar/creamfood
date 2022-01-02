@@ -456,6 +456,11 @@ local function WalkTo ( _string )
 	getgenv().walkto = game:GetService("RunService").RenderStepped:Connect (function()
 		game.Players.LocalPlayer.Character.Humanoid:MoveTo ( GetPlayer ( _string ).Character.HumnaoidRootPart.Position )
 	end)
+	table.insert ( events, "walkto" )
+end
+
+local function UnWalkto ( )
+	if table.find ( events, "walkto" ) then getgenv().walkto:Disconnect(); table.remove ( events, table.find ( events, "walkto" ) )
 end
 
 -- // commands
@@ -497,7 +502,7 @@ addcmd ( "noinfjump", "", NoInfJump )
 addcmd ( "nosit", "", NoSit )
 addcmd ( "walkto", "", WalkTo )
 addcmd ( "unnosit","nnsit", UnNosit )
-
+addcmd ( "unwalkto", "", UnWalkto )
 
 -- // commands
 
