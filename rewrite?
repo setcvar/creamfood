@@ -107,6 +107,7 @@ end
 
 local function unantiafk ( )
     if events.antiafk then antiafk:Disconnect() end
+    table.remove(events, table.find(events, "antiafk"))
 end
 
 local function spin( int )
@@ -114,11 +115,12 @@ local function spin( int )
     BodyAngularVelocity.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
     BodyAngularVelocity.AngularVelocity = Vector3.new( 0, tonumber( int ), 0 )
     BodyAngularVelocity.MaxTorque = Vector3.new( 0, math.huge, 0 )
-    table.insert( events, "BodyAngularVelocity" )
+    table.insert( events, "spin" )
 end
 
 local function unspin ( )
     if events.BodyAngularVelocity then game.Players.LocalPlayer.Character.HumanoidRootPart.BodyAngularVelocity:Destroy() end
+    table.remove(events, table.find(events, "spin"))
 end
 
 local function clearevents ( )
