@@ -1,5 +1,6 @@
 local commands = {}
 local alias = {}
+local events = {}
 
 local function mAddCMD(cmd , data)
     table.insert(commands, data)
@@ -75,21 +76,65 @@ local function run_command(cmd)
     end
 end
 
-local function detect_argument_type(argument)
-    if typeof(argument) == "string" then
-        return 0
-
-    elseif typeof(argument) == "number" then
-        return 1
-
-    elseif typeof(argument) == nil then
-        return -1
-    end
-end
-
-local function _print(argument_string)
-    if detect_argument_type(argument_string) == -1 then print("argument is nil") end
+local function _print(  )
     print(argument_string)
 end
 
-addcmd("print", "p", print)
+local function walkspeed( int )
+    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = argument_int
+end
+
+local function jumppower ( int )
+    if tonumber(int) <= 0 then int = game.Players.LocalPlayer.Character.Humanoid.JumpPower end
+    game.Players.LocalPlayer.Character.Humanoid.JumpPower = tonumber(int)
+end
+
+local function setmaxfps ( int )
+    if setfpscap then
+        setfpscap(int)
+    end
+end
+
+local function antiafk ( )
+    antiafk = game.Players.LocalPlayer.Idled:Connect(function()
+        for i,v in pairs(getconnections(game.Players.LocalPlayer.Idled)) do
+            v:Disable()
+            v:Disconnect()
+        end
+    end)
+    table.insert(events, "antiafk")
+end
+
+local function unantiafk ( )
+    if events.antiafk then antiafk:Disconnect() end
+end
+
+local function spin( int )
+    local BodyAngularVelocity = Instance.new( "BodyAngularVelocity" )
+    BodyAngularVelocity.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
+    BodyAngularVelocity.AngularVelocity = Vector3.new( 0, tonumber( int ), 0 )
+    BodyAngularVelocity.MaxTorque = Vector3.new( 0, math.huge, 0 )
+    table.insert( events, "BodyAngularVelocity" )
+end
+
+local function unspin ( )
+    if events.BodyAngularVelocity then game.Players.LocalPlayer.Character.HumanoidRootPart.BodyAngularVelocity:Destroy() end
+end
+
+local function clearevents ( )
+    table.clear(events)
+end
+
+-- // commands
+
+addcmd ( "print", "p", _print )
+addcmd ( "speed", "ws" , walkspeed )
+addcmd ( "jumppower", "jpp",  jumppower)
+addcmd ( "setmaxfps", "mfps",  setmaxfps)
+addcmd ( "antiafk", "aa", antiafk )
+addcmd ( "unantiafk", "unaa", unantiafk )
+addcmd ( "spin", "sp", spin )
+addcmd ( "unspin", "unsp", unspin )
+addcmd ( "clearevents", "ce", clearevents )
+
+-- // commands
