@@ -156,11 +156,11 @@ local function changestate ( state )
 end
 
 local function jump ( )
-    run_command ( "changestate Jumping" )
+    game.Players.LocalPlayer.Character.Humanoid:ChangeState( Enum.HumanoidStateType.Jumping )
 end
 
 local function sit ( )
-    run_command ( "changestate Seated" )
+    game.Players.LocalPlayer.Character.Humanoid.Sit = true
 end
 
 local function colorful_world ( )
@@ -173,10 +173,16 @@ local function colorful_world ( )
 end
 
 local function drugs ( )
-    run_command ( "colorful_world" )
+    math.randomseed ( game.Players.LocalPlayer.UserId + 50 )
+    for index, value in pairs ( workspace:GetDescendants() ) do
+        if value:IsA ( "BasePart" ) or value:IsA ( "Part" ) then
+            value.Color3 = Color3.fromRGB ( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 ) )
+        end
+    end
     for i,v in pairs ( game.Lighting:GetDescendants() ) do
-        if not v:IsA ( "Atmosphere" ) then Instance.new("Atmosphere", game.Lighting) end
-        if not v:IsA ( "Sky" ) then Instance.new("Sky", game.Lighting) end
+        if v:IsA ( "Atmosphere" ) or v:IsA ( "Sky" ) then v:Destroy() end
+        Instance.new("Atmosphere", game.Lighting)
+        Instance.new("Sky", game.Lighting)
     end
     game:GetService("RunService").RenderStepped:Connect( function ( )
         game.Lighting.ClockTime = math.random ( 0, 24 )
@@ -188,6 +194,10 @@ local function drugs ( )
         game.Lighting.Atmosphere.Glare = math.random ( 0, 10 )
         game.Lighting.Atmosphere.Haze = math.random ( 0, 10 )
     end)
+end
+
+local function chatlog ( player )
+
 end
 
 -- // commands
@@ -206,7 +216,7 @@ addcmd ( "clip", "c", clip )
 addcmd ( "jump", "jump", jump )
 addcmd ( "sit", "sit", sit )
 addcmd ( "colorful_world", "cw", colorful_world )
-addcmd ( "drugs", "drugs", drugs )
+addcmd ( "drugs", "drgs", drugs )
 
 -- // commands
 
