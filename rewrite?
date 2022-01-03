@@ -460,7 +460,7 @@ local function WalkTo ( _string )
 end
 
 local function UnWalkto ( )
-	if table.find ( events, "walkto" ) then getgenv().walkto:Disconnect(); table.remove ( events, table.find ( events, "walkto" ) )
+	if table.find ( events, "walkto" ) then getgenv().walkto:Disconnect(); table.remove ( events, table.find ( events, "walkto" ) ) end
 end
 
 local function Commands ( )
@@ -468,6 +468,20 @@ local function Commands ( )
 	for index, value in pairs ( commands ) do
 		print ( index )
 	end
+end
+
+local function ShiftSpeed ( int )
+    table.insert ( events, "imspeed" )
+    getgenv().shift = game:GetService ( "UserInputService" ).InputBegan:Connect (function(input, gameProcessedEvent)
+        if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = int end
+    end)
+    getgenv().shift_end = game:GetService( "UserInputService" ).InputEnded:Connect (function(input, gameProcessedEvent)
+        if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed
+    end)
+end
+
+local function UnShiftSpeed ( )
+    if table.find ( events, "imspeed" ) then getgenv().shift:Disconnect(); getgenv().shift_end:Disconnect() end
 end
 
 -- // commands
@@ -511,6 +525,8 @@ addcmd ( "walkto", "", WalkTo )
 addcmd ( "unnosit","nnsit", UnNosit )
 addcmd ( "unwalkto", "", UnWalkto )
 addcmd ( "cmds", "help", Commands )
+addcmd ( "shiftspeed", "sspeed", ShiftSpeed )
+addcmd ( "unshiftspeed", "unsspeed", UnShiftSpeed )
 
 -- // commands
 
