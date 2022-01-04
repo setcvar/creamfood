@@ -547,7 +547,7 @@ local function DeleteHats ( )
 end
 
 local function DropHats ( )
-    for index, value in pairs ( game.Player.LocalPlayer.Character.Humanoid:GetAccessories ( ) ) do
+    for index, value in pairs ( game.Players.LocalPlayer.Character.Humanoid:GetAccessories ( ) ) do
         value.Parent = workspace
     end
 end
