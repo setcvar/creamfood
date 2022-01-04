@@ -542,6 +542,16 @@ local function StopBhop( )
     if getgenv().bhop or table.find ( events, "bhop" ) then getgenv().bhop:Disconnect(); table.remove ( events, table.find ( events, "bhop" ) ); end
 end
 
+local function DeleteHats ( )
+    game.Players.LocalPlayer.Character.Humanoid:RemoveAccessories()
+end
+
+local function DropHats ( )
+    for index, value in pairs ( game>player.LocalPlayer.Character.Humanoid:GetAccessories ( ) ) do
+        value.Parent = workspace
+    end
+end
+
 -- // commands
 
 addcmd ( "print", "p", _print )
@@ -593,6 +603,8 @@ addcmd ( "unpmspam", "", UnPMSpam )
 addcmd ( "spamspeed", "", SpamSpeed )
 addcmd ( "bhop", "", Bhop )
 addcmd ( "stopbhop", "", StopBhop )
+addcmd ( "deletehats", "delhats", DeleteHats )
+addcmd ( "drophats","dhats", DropHats )
 
 -- // commands
 
