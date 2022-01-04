@@ -180,7 +180,7 @@ local function drugs ( )
     math.randomseed ( game.Players.LocalPlayer.UserId + 50 )
     for index, value in pairs ( workspace:GetDescendants() ) do
         if value:IsA ( "BasePart" ) or value:IsA ( "Part" ) then
-            value.Color3 = Color3.fromRGB ( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 ) )
+            value.Color = Color3.fromRGB ( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 ) )
         end
     end
     for i,v in pairs ( game.Lighting:GetDescendants() ) do
