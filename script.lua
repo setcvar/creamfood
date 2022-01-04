@@ -1078,3 +1078,9 @@ character.Humanoid.Died:Connect(function()
 		commands:unnosit()
 	end
 end)
+
+
+--[[
+ideias:
+notificação customizada
+]]
