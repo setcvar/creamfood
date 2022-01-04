@@ -77,8 +77,7 @@ local function run_command ( cmd )
             commands[command](arguments)
         end
     end
-    local run = coroutine.wrap ( run )
-    run()
+    coroutine.resume( coroutine.create ( run ) )
 end
 
 local function _print ( _string )
@@ -129,7 +128,10 @@ local function unspin ( )
 end
 
 local function clearevents ( )
-    table.clear(events)
+    for index, value in pairs ( events ) do
+        if value:IsA ( "Connection" ) or value:IsA ( "RBXScriptConnection" ) then value:Disconnect(); table.remove ( events, index ); continue end
+        table.remove ( events, index )
+    end
 end
 
 local function highgraphics ( )
@@ -210,9 +212,6 @@ local function chatlog_everyone ( )
     for index, value in pairs (game.Players:GetPlayers()) do
         chatlog ( value )
     end
-    game.Players.PlayerAdded:Connect ( function (player)
-        chatlog ( player )
-    end)
 end
 
 local function save_chatlogs ( )
@@ -328,22 +327,21 @@ local function ExtremePotatoMode ( )
 	game.Lighting.Ambient = Color3.fromRGB ( 255, 255, 255 )
 	game.Lighting.GlobalShadows = false
 
-        for index, value in pairs ( workspace:GetDescendants ( ) ) do
-            if value:IsA ( "Part" ) or value:IsA ( "BasePart" ) then value.Material = Enum.Material.SmoothPlastic; value.Shape = Enum.PartType.Block end
-            if value:IsA ( "Decal" ) then value:Destroy() end
-            if value:IsA ( "UnionOperation" ) then value:Destroy() end
-            if value:IsA ( "Atmosphere" ) or value:IsA ( "Sky" ) or value:IsA ( "BloomEffect" ) or value:IsA ( "ColorCorrectionEffect" ) or value:IsA ( "BlurEffect" ) or value:IsA ( "DepthOfFieldEffect" ) or value:IsA ( "SunRaysEffect" ) then value:Destroy() end
-            if sethiddenproperty then sethiddenproperty(game.Lighting, "Technology", "Compatibility") end
-            if value:IsA ( "Shirt" ) or value:IsA ( "Pants" ) or value:IsA ( "Accessory" ) then value:Destroy() end
-            if value:IsA ( "Beam" ) or value:IsA ( "Explosion" ) or value:IsA ( "Fire" ) or value:IsA ( "ParticleEmitter" ) or value:IsA ( "Sparkles" ) or value:IsA ( "Trail" ) then value:Destroy() end
-            if value:IsA ( "BlockMesh" ) or value:IsA ( "SpecialMesh" ) then value:Destroy() end
-            if value:IsA ( "Texture" ) then value:Destroy()
-        end
+    for index, value in pairs ( workspace:GetDescendants ( ) ) do
+        if value:IsA ( "Part" ) or value:IsA ( "BasePart" ) then value.Material = Enum.Material.SmoothPlastic; value.Shape = Enum.PartType.Block end
+        if value:IsA ( "Decal" ) then value:Destroy() end
+        if value:IsA ( "UnionOperation" ) then value:Destroy() end
+        if value:IsA ( "Atmosphere" ) or value:IsA ( "Sky" ) or value:IsA ( "BloomEffect" ) or value:IsA ( "ColorCorrectionEffect" ) or value:IsA ( "BlurEffect" ) or value:IsA ( "DepthOfFieldEffect" ) or value:IsA ( "SunRaysEffect" ) then value:Destroy() end
+        if sethiddenproperty then sethiddenproperty(game.Lighting, "Technology", "Compatibility") end
+        if value:IsA ( "Shirt" ) or value:IsA ( "Pants" ) or value:IsA ( "Accessory" ) then value:Destroy() end
+        if value:IsA ( "Beam" ) or value:IsA ( "Explosion" ) or value:IsA ( "Fire" ) or value:IsA ( "ParticleEmitter" ) or value:IsA ( "Sparkles" ) or value:IsA ( "Trail" ) then value:Destroy() end
+        if value:IsA ( "BlockMesh" ) or value:IsA ( "SpecialMesh" ) then value:Destroy() end
+        if value:IsA ( "Texture" ) then value:Destroy()
+    end
     if workspace.CurrentCameraFindFirstChildWhichIsA ( "Clouds" ) then workspace:FindFirstChildWhichIsA ( "Clouds" ):Destroy() end
-        for index, value in pairs ( game.Players:GetPlayers() ) do
-            for _, value2 in pairs ( value.Character:GetDescendants ( ) ) do
-                if value2:IsA ( "Shirt" ) or value2:IsA ( "Pants" ) or value2:IsA ( "Accessory" ) then value2:Destroy() end
-            end
+    for index, value in pairs ( game.Players:GetPlayers() ) do
+        for _, value2 in pairs ( value.Character:GetDescendants ( ) ) do
+            if value2:IsA ( "Shirt" ) or value2:IsA ( "Pants" ) or value2:IsA ( "Accessory" ) then value2:Destroy() end
         end
     end
 end
@@ -459,7 +457,7 @@ end
 
 local function WalkTo ( _string )
 	getgenv().walkto = game:GetService("RunService").RenderStepped:Connect (function()
-		game.Players.LocalPlayer.Character.Humanoid:MoveTo ( GetPlayer ( _string ).Character.HumanoidRootPart.Position )
+		game.Players.LocalPlayer.Character.Humanoid:MoveTo ( GetPlayer ( _string ).Character.HumnaoidRootPart.Position )
 	end)
 	table.insert ( events, "walkto" )
 end
@@ -473,6 +471,11 @@ local function Commands ( )
 	for index, value in pairs ( commands ) do
 		print ( index )
 	end
+    game.StarterGui:SetCore( "SendNotification", { 
+        Title = 'Creamfood',
+        Text = 'Press F9 to view the commands.',
+        Duration = 5
+    })
 end
 
 local function ShiftSpeed ( int )
@@ -481,7 +484,7 @@ local function ShiftSpeed ( int )
         if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = int end
     end)
     getgenv().shift_end = game:GetService( "UserInputService" ).InputEnded:Connect (function(input, gameProcessedEvent)
-        if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16 end
+        if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed
     end)
 end
 
@@ -489,27 +492,55 @@ local function UnShiftSpeed ( )
     if table.find ( events, "imspeed" ) then getgenv().shift:Disconnect(); getgenv().shift_end:Disconnect() end
 end
 
-local function Retrowave ( )
-    for index, value in pairs ( workspace:GetDescendants ( ) ) do
-        if value:IsA ( "BasePart" ) and value.Transparency <= 0 or value:IsA ( "Part" ) and value.Transparency <= 0 then
-            local SelectionBox = Instance.new ( "SelectionBox" )
-            SelectionBox.Parent = value
-            SelectionBox.Color3 = Color3.fromRGB ( 255, 201, 252 )
-            SelectionBox.LineThickness = 0.015
-            SelectionBox.Adornee = value
-        end
+local function Spam ( _string )
+    local event = game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest
+    getgenv().spam = true
+    while wait ( getgenv ( ).spamspeed ) and getgenv().spam == true do
+        event:FireServer ( _string, "All" )
     end
-    for index, value in pairs ( workspace:GetDescendants() ) do
-        if value:IsA ( "BasePart" ) and value.Transparency <= 0 then
-            value.Color = Color3.fromRGB ( 0, 0, 0 )
-            value.Material = Enum.Material.SmoothPlastic
-        elseif value:IsA ( "Decal" ) or value:IsA ( "Texture" ) then value:Destroy()
-        end
-    end
-    run_command ( "loopnight " )
+    table.insert ( events, "spam" )
 end
 
-local function 
+local function PMSpam ( _string2, _string )
+    local event = game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest
+    getgenv().pmspam = true
+    while wait ( getgenv ( ).spamspeed ) and getgenv().pmspam == true do
+        event:FireServer ( _string2, GetPlayer ( _string ) )
+    end
+    table.insert ( events, "pmspam" )
+end
+
+local function SpamSpeed ( int )
+    getgenv().spamspeed = int
+end
+
+local function UnSpam ( )
+    if getgenv ( ).spam or table.find ( events, "spam" ) then getgenv().spam = false; table.remove ( events, table.find ( events, "spam" ) ) end
+end
+
+local function UnPMSpam ( )
+    if getgenv ( ).spam or table.find ( events, "pmspam" ) then getgenv().pmspam = false; table.remove ( events, table.find ( events, "pmspam" ) ) end
+end
+
+local function NoRotate ( )
+    game.Players.LocalPlayer.Character.Humanoid.AutoRotate = false
+end
+
+local function UnNoRotate ( )
+    game.Players.LocalPlayer.Character.Humanoid.AutoRotate = true
+end
+
+local function Bhop ( )
+    if getgenv().bhop or table.find ( events, "bhop" ) then return end
+    getgenv().bhop = game:GetService ( "RunService" ).Stepped:Connect(function()
+        if game.Players.LocalPlayer.Character.Humanoid.FloorMaterial ≃ Enum.Material.Air then run_command ( "jump" )
+    end)
+    table.insert( events, "bhop" )
+end
+
+local function StopBhop( )
+    if getgenv().bhop or table.find ( events, "bhop" ) then getgenv().bhop:Disconnect(); table.remove ( events, table.find ( events, "bhop" ) ); end
+end
 
 -- // commands
 
@@ -524,13 +555,13 @@ addcmd ( "unspin", "unsp", unspin )
 addcmd ( "clearevents", "ce", clearevents )
 addcmd ( "noclip", "nc", noclip )
 addcmd ( "clip", "c", clip )
-addcmd ( "jump", "jump", jump )
+addcmd ( "jump", "", jump )
 addcmd ( "sit", "sit", sit )
-addcmd ( "colorful_world", "cw", colorful_world )
+addcmd ( "colorful_world", "", colorful_world )
 addcmd ( "drugs", "drgs", drugs )
 addcmd ( "chatlog", "clog", chatlog_everyone )
 addcmd ( "savechatlog", "saveclog", save_chatlogs )
-addcmd ( "goto", "gt", _goto )
+addcmd ( "goto", "", _goto )
 addcmd ( "freeze", "stuck", _Freeze )
 addcmd ( "thaw", "unstuck", _Thaw )
 addcmd ( "hitbox", "hbox", Hitbox )
@@ -540,8 +571,8 @@ addcmd ( "highgraphics", "hg", highgraphics )
 addcmd ( "rejoin", "rj", rejoin )
 addcmd ( "loopday", "ld", LoopDay )
 addcmd ( "unloopday", "unld", UnLoopDay )
-addcmd ( "view","vw", View )
-addcmd ( "unview", "unvw", Unview )
+addcmd ( "view","", View )
+addcmd ( "unview", "", Unview )
 addcmd ( "loopnight", "ln", LoopNight )
 addcmd ( "unloopnight", "unln", UnLoopNight )
 addcmd ( "halve", "", Halve )
@@ -554,7 +585,14 @@ addcmd ( "unwalkto", "", UnWalkto )
 addcmd ( "cmds", "help", Commands )
 addcmd ( "shiftspeed", "sspeed", ShiftSpeed )
 addcmd ( "unshiftspeed", "unsspeed", UnShiftSpeed )
-addcmd ( "retro", "", Retrowave )
+addcmd ( "setcreatorid", "creatorid", SetCreatorId )
+addcmd ( "spam", "", Spam )
+addcmd ( "pmspam", "", PMSpam )
+addcmd ( "unspam", "", UnSpam )
+addcmd ( "unpmspam", "", UnPMSpam )
+addcmd ( "spamspeed", "", SpamSpeed )
+addcmd ( "bhop", "", Bhop )
+addcmd ( "stopbhop", "", StopBhop )
 
 -- // commands
 
@@ -566,20 +604,20 @@ local function CreateInstance(cls,props)
     return inst
 end
         
-local ScreenGui = CreateInstance('ScreenGui',{DisplayOrder=0,Enabled=true,ResetOnSpawn=true,Name=game:GetService("HttpService"):GenerateGUID(false), Parent=gethui() or game.CoreGui})
-local TextBox = CreateInstance('TextBox',{ClearTextOnFocus=true,Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size14,MultiLine=false,Text='',TextColor3=Color3.new(0, 0, 0), PlaceholderText='', PlaceholderColor3=Color3.new(0.7, 0.7, 0.7),TextScaled=false,TextSize=14,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=1,ClipsDescendants=false,Draggable=false,Position=UDim2.new(-0.00244425423, 0, 0.770705044, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 200, 0, 50),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name=game:GetService("HttpService"):GenerateGUID(false),Parent = ScreenGui})
+local ScreenGui = CreateInstance('ScreenGui',{DisplayOrder=0,Enabled=true,ResetOnSpawn=true,Name='ScreenGui', Parent=gethui() or game.CoreGui})
+local TextBox = CreateInstance('TextBox',{ClearTextOnFocus=true,Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size14,MultiLine=false,Text='',TextColor3=Color3.new(0, 0, 0), PlaceholderText='', PlaceholderColor3=Color3.new(0.7, 0.7, 0.7),TextScaled=false,TextSize=14,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=1,ClipsDescendants=false,Draggable=false,Position=UDim2.new(-0.00244425423, 0, 0.770705044, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 200, 0, 50),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='TextBox',Parent = ScreenGui})
 
 TextBox.FocusLost:Connect(function(enter)
 	if enter then
-		run_command ( TextBox.Text )
+		run_command(TextBox.Text)
 		TextBox.Text = ""
 	end
 end)
 
-game:GetService ("ContextActionService" ):BindAction("Focus", function()
+game:GetService("ContextActionService"):BindAction("Focus", function()
 	if TextBox.Visible then
-		TextBox:CaptureFocus ( )
-		game:GetService ( "RunService" ).RenderStepped:Wait ( )
+		TextBox:CaptureFocus()
+		game:GetService("RunService").RenderStepped:Wait()
 		TextBox.Text = ""
 	end
 end, false, Enum.KeyCode.RightBracket)
