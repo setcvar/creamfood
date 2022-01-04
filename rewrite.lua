@@ -184,11 +184,17 @@ local function drugs ( )
         end
     end
     for i,v in pairs ( game.Lighting:GetDescendants() ) do
-        if v:IsA ( "Atmosphere" ) or v:IsA ( "Sky" ) then v:Destroy() end
+        if v:IsA ( "Atmosphere" ) or v:IsA ( "Sky" ) or v:IsA ( "ColorCorrectionEffect" ) then v:Destroy() end
         Instance.new("Atmosphere", game.Lighting)
         Instance.new("Sky", game.Lighting)
+        Instance.new("ColorCorrectionEffect", game.Lighting)
     end
     game:GetService("RunService").RenderStepped:Connect( function ( )
+        for index, value in pairs ( workspace:GetDescendants() ) do
+            if value:IsA ( "BasePart" ) or value:IsA ( "Part" ) then
+                value.Color = Color3.fromRGB ( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 ) )
+            end
+        end
         game.Lighting.ClockTime = math.random ( 0, 24 )
         game.Lighting.Brightness = math.random ( 0, 10 )
         game.Lighting.Atmosphere.Density = math.random ( 0, 1 )
@@ -196,7 +202,10 @@ local function drugs ( )
         game.Lighting.Atmosphere.Color = Color3.fromRGB ( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 ) )
         game.Lighting.Atmosphere.Decay = Color3.fromRGB ( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 ) )
         game.Lighting.Atmosphere.Glare = math.random ( 0, 10 )
-    
+        game.Lighting.ColorCorrection.Brightness = math.random ( 0, 10 )
+        game.Lighting.ColorCorrection.Saturation = math.random ( 0, 10 )
+        game.Lighting.ColorCorrection.Contrast = math.random ( 0, 10 )
+        game.Lighting.ColorCorrection.TintColor = Color3.fromRGB( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 )  )
         game.Lighting.Atmosphere.Haze = math.random ( 0, 10 )
     end)
 end
@@ -328,20 +337,21 @@ local function ExtremePotatoMode ( )
 	game.Lighting.GlobalShadows = false
 
     for index, value in pairs ( workspace:GetDescendants ( ) ) do
-        if value:IsA ( "Part" ) or value:IsA ( "BasePart" ) then value.Material = Enum.Material.SmoothPlastic; value.Shape = Enum.PartType.Block end
-        if value:IsA ( "Decal" ) then value:Destroy() end
-        if value:IsA ( "UnionOperation" ) then value:Destroy() end
-        if value:IsA ( "Atmosphere" ) or value:IsA ( "Sky" ) or value:IsA ( "BloomEffect" ) or value:IsA ( "ColorCorrectionEffect" ) or value:IsA ( "BlurEffect" ) or value:IsA ( "DepthOfFieldEffect" ) or value:IsA ( "SunRaysEffect" ) then value:Destroy() end
-        if sethiddenproperty then sethiddenproperty(game.Lighting, "Technology", "Compatibility") end
-        if value:IsA ( "Shirt" ) or value:IsA ( "Pants" ) or value:IsA ( "Accessory" ) then value:Destroy() end
-        if value:IsA ( "Beam" ) or value:IsA ( "Explosion" ) or value:IsA ( "Fire" ) or value:IsA ( "ParticleEmitter" ) or value:IsA ( "Sparkles" ) or value:IsA ( "Trail" ) then value:Destroy() end
-        if value:IsA ( "BlockMesh" ) or value:IsA ( "SpecialMesh" ) then value:Destroy() end
-        if value:IsA ( "Texture" ) then value:Destroy()
-    end
-    if workspace.CurrentCameraFindFirstChildWhichIsA ( "Clouds" ) then workspace:FindFirstChildWhichIsA ( "Clouds" ):Destroy() end
-    for index, value in pairs ( game.Players:GetPlayers() ) do
-        for _, value2 in pairs ( value.Character:GetDescendants ( ) ) do
-            if value2:IsA ( "Shirt" ) or value2:IsA ( "Pants" ) or value2:IsA ( "Accessory" ) then value2:Destroy() end
+            if value:IsA ( "Part" ) or value:IsA ( "BasePart" ) then value.Material = Enum.Material.SmoothPlastic; value.Shape = Enum.PartType.Block end
+            if value:IsA ( "Decal" ) then value:Destroy() end
+            if value:IsA ( "UnionOperation" ) then value:Destroy() end
+            if value:IsA ( "Atmosphere" ) or value:IsA ( "Sky" ) or value:IsA ( "BloomEffect" ) or value:IsA ( "ColorCorrectionEffect" ) or value:IsA ( "BlurEffect" ) or value:IsA ( "DepthOfFieldEffect" ) or value:IsA ( "SunRaysEffect" ) then value:Destroy() end
+            if sethiddenproperty then sethiddenproperty(game.Lighting, "Technology", "Compatibility") end
+            if value:IsA ( "Shirt" ) or value:IsA ( "Pants" ) or value:IsA ( "Accessory" ) then value:Destroy() end
+            if value:IsA ( "Beam" ) or value:IsA ( "Explosion" ) or value:IsA ( "Fire" ) or value:IsA ( "ParticleEmitter" ) or value:IsA ( "Sparkles" ) or value:IsA ( "Trail" ) then value:Destroy() end
+            if value:IsA ( "BlockMesh" ) or value:IsA ( "SpecialMesh" ) then value:Destroy() end
+            if value:IsA ( "Texture" ) then value:Destroy()
+        end
+        if workspace.CurrentCameraFindFirstChildWhichIsA ( "Clouds" ) then workspace:FindFirstChildWhichIsA ( "Clouds" ):Destroy() end
+        for index, value in pairs ( game.Players:GetPlayers() ) do
+            for _, value2 in pairs ( value.Character:GetDescendants ( ) ) do
+                if value2:IsA ( "Shirt" ) or value2:IsA ( "Pants" ) or value2:IsA ( "Accessory" ) then value2:Destroy() end
+            end
         end
     end
 end
@@ -484,7 +494,7 @@ local function ShiftSpeed ( int )
         if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = int end
     end)
     getgenv().shift_end = game:GetService( "UserInputService" ).InputEnded:Connect (function(input, gameProcessedEvent)
-        if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed
+        if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16 end
     end)
 end
 
@@ -533,7 +543,7 @@ end
 local function Bhop ( )
     if getgenv().bhop or table.find ( events, "bhop" ) then return end
     getgenv().bhop = game:GetService ( "RunService" ).Stepped:Connect(function()
-        if game.Players.LocalPlayer.Character.Humanoid.FloorMaterial ~= Enum.Material.Air then run_command ( "jump" )
+        if game.Players.LocalPlayer.Character.Humanoid.FloorMaterial ~= Enum.Material.Air then run_command ( "jump" ) end
     end)
     table.insert( events, "bhop" )
 end
@@ -605,6 +615,8 @@ addcmd ( "bhop", "", Bhop )
 addcmd ( "stopbhop", "", StopBhop )
 addcmd ( "deletehats", "delhats", DeleteHats )
 addcmd ( "drophats","dhats", DropHats )
+addcmd ( "norotate", "", NoRotate )
+addcmd ( "unnorotate", "", UnNoRotate )
 
 -- // commands
 
