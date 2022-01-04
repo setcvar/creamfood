@@ -533,7 +533,7 @@ end
 local function Bhop ( )
     if getgenv().bhop or table.find ( events, "bhop" ) then return end
     getgenv().bhop = game:GetService ( "RunService" ).Stepped:Connect(function()
-        if game.Players.LocalPlayer.Character.Humanoid.FloorMaterial ≃ Enum.Material.Air then run_command ( "jump" )
+        if game.Players.LocalPlayer.Character.Humanoid.FloorMaterial ~= Enum.Material.Air then run_command ( "jump" )
     end)
     table.insert( events, "bhop" )
 end
