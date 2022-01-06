@@ -515,7 +515,7 @@ local function PMSpam ( _string2, _string )
     local event = game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest
     getgenv().pmspam = true
     while wait ( getgenv ( ).spamspeed ) and getgenv().pmspam == true do
-        event:FireServer ( _string2, GetPlayer ( _string ) )
+        event:FireServer ( _string2, GetPlayer ( _string ).Name )
     end
     table.insert ( events, "pmspam" )
 end
