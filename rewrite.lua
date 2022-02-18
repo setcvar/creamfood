@@ -77,7 +77,7 @@ local function run_command ( cmd )
             commands[command](arguments)
         end
     end
-    coroutine.resume( coroutine.create ( run ) )
+    pcall ( function ( ) coroutine.resume( coroutine.create ( run ) ); end )
 end
 
 local function _print ( _string )
@@ -168,7 +168,7 @@ local function sit ( )
 end
 
 local function colorful_world ( )
-    math.randomseed ( game.Players.LocalPlayer.UserId + (100 / 2 * 6 + 2 - 1) )
+    math.randomseed ( game.Players.LocalPlayer.UserId + (100 / 2 * 6 + 2 - 1) + (math.random ( 0, math.random ( 0, 49604212 ) ) * 0.5 ) - 6 )
     for index, value in pairs ( workspace:GetDescendants() ) do
         if value:IsA ( "BasePart" ) or value:IsA ( "Part" ) then
             value.Color3 = Color3.fromRGB ( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 ) )
@@ -254,44 +254,64 @@ end
 
 
 local function _Freeze ( _string )
-    if FindPlayer ( _string ) == game.Players.LocalPlayer then Freeze ( game.Players.LocalPlayer ) end -- me
 
-    if FindPlayer ( _string ) == 0 then -- others
+    if _string == "me" then Freeze ( game.Players.LocalPlayer ) end;
+
+    if _string == "others" then
+
         for index, value in pairs ( game.Players:GetPlayers (  ) ) do
-            if value == game.Players.LocalPlayer then return end
+
+            if value == game.Players.LocalPlayer or value.Name == game.Players.LocalPlayer.Name then return end
             Freeze ( value )
+
         end
 
-    end
-    
-    if FindPlayer ( _string ) == 1 then -- all
-        for index, value in pairs ( game.Players:GetPlayers ( ) ) do
+    end;
+
+    if _string == "all" then
+
+        for index, value in pairs ( game.Players:GetPlayers (  ) ) do
+
             Freeze ( value )
+        
         end
-    end
+
+    end;
+
 end
 
 local function _Thaw ( _string )
-    if FindPlayer ( _string ) == game.Players.LocalPlayer then Thaw ( game.Players.LocalPlayer ) end -- me
 
-    if FindPlayer ( _string ) == 0 then -- others
+    if _string == "me" then Thaw ( game.Players.LocalPlayer ) end;
+
+    if _string == "others" then
+
         for index, value in pairs ( game.Players:GetPlayers (  ) ) do
-            if value == game.Players.LocalPlayer then return end
+
+            if value == game.Players.LocalPlayer or value.Name == game.Players.LocalPlayer.Name then return end
             Thaw ( value )
+
         end
 
-    end
-    
-    if FindPlayer ( _string ) == 1 then -- all
-        for index, value in pairs ( game.Players:GetPlayers ( ) ) do
+    end;
+
+    if _string == "all" then
+
+        for index, value in pairs ( game.Players:GetPlayers (  ) ) do
+
             Thaw ( value )
+        
         end
-    end
+
+    end;
+
 end
 
 local function Hitbox ( )
-    for index, value in pairs ( workspace:GetDescendants ( ) ) do
-        if value:IsA ( "BasePart" ) and value.Transparency <= 0 or value:IsA ( "Part" ) and value.Transparency <= 0 then
+    coroutine.resume ( coroutine.create ( function ( ) 
+            
+        for index, value in pairs ( workspace:GetDescendants ( ) ) do
+            if value:IsA ( "BasePart" ) and value.Transparency <= 0 or value:IsA ( "Part" ) and value.Transparency <= 0 then
             local SelectionBox = Instance.new ( "SelectionBox" )
             SelectionBox.Parent = value
             SelectionBox.Color3 = Color3.fromRGB ( 201, 248, 255 )
@@ -306,6 +326,8 @@ local function Hitbox ( )
             SelectionBox.Adornee = value
         end
     end
+
+    end ) )
  end
 
 local function PotatoMode ( )
@@ -420,13 +442,12 @@ local function LoopNight ( ... )
 end
 
 local function UnLoopNight ( )
-	if table.find ( events,  "loopnight 0" ) then day_loop:Disconnect() end
-	if table.find ( events, "loopnight 1" ) then day_loop:Disconnect() end
+	if table.find ( events,  "loopnight 0" ) or table.find ( events, "loopnight 1" ) then day_loop:Disconnect() end
 end
 
 local function IsR15()
 	if game.Players.LocalPlayer.Character.Humanoid.RigType == Enum.HumanoidRigType.R15 then
-		return 1; else return 0 end
+		return 1; else return 0; end
 end
 
 local function Halve ( )
@@ -484,7 +505,7 @@ local function ShiftSpeed ( int )
         if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = int end
     end)
     getgenv().shift_end = game:GetService( "UserInputService" ).InputEnded:Connect (function(input, gameProcessedEvent)
-        if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed
+        if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
     end)
 end
 
@@ -637,7 +658,6 @@ end
 local function RequiresNeck ( bool )
 
     if not game.Players.LocalPlayer.Character then game.Players.LocalPlayer.Character.CharacterAdded:Wait(); RequiresNeck ( bool ) end
-
     if bool == "true" then game.Players.LocalPlayer.Character.Humanoid.RequiresNeck = true; end
     if bool == "false" then game.Players.LocalPlayer.Character.Humanoid.RequiresNeck = false; end
 
@@ -651,6 +671,8 @@ local function TakeDamage ( damage )
 end
 
 local function Hell ( )
+
+    math.randomseed ( game.Players.LocalPlayer.UserId + (100 / 2 * 6 + 2 - 1) + (math.random ( 0, math.random ( 0, 49604212 ) ) * 0.5 ) - 6 )
 
     if not game:IsLoaded() then game.Loaded:Wait(); end
 
@@ -753,8 +775,7 @@ addcmd ( "hipheight", "hh", HipHeight )
 addcmd ( "requiresneck", "", RequiresNeck )
 addcmd ( "hell", "", Hell )
 addcmd ( "runscript", "rs", runscript )
-addcmd ("filescript", "runfile", filescript)
-
+addcmd ("filescript", "runfile", filescript )
 
 -- // commands
 
@@ -771,7 +792,7 @@ local TextBox = CreateInstance('TextBox',{ClearTextOnFocus=true,Font=Enum.Font.S
 
 TextBox.FocusLost:Connect(function(enter)
 	if enter then
-		run_command(TextBox.Text)
+		run_command( TextBox.Text )
 		TextBox.Text = ""
 	end
 end)
