@@ -367,6 +367,7 @@ local function ExtremePotatoMode ( )
         end
     end
 end
+end
 
 local function Gravity ( int )
 	if tonumber ( int ) < 0 then int = 0 end
@@ -505,7 +506,7 @@ local function ShiftSpeed ( int )
         if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = int end
     end)
     getgenv().shift_end = game:GetService( "UserInputService" ).InputEnded:Connect (function(input, gameProcessedEvent)
-        if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+        if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16 end
     end)
 end
 
@@ -554,7 +555,7 @@ end
 local function Bhop ( )
     if getgenv().bhop or table.find ( events, "bhop" ) then return end
     getgenv().bhop = game:GetService ( "RunService" ).Stepped:Connect(function()
-        if game.Players.LocalPlayer.Character.Humanoid.FloorMaterial ≃ Enum.Material.Air then run_command ( "jump" )
+        if game.Players.LocalPlayer.Character.Humanoid.FloorMaterial ~= Enum.Material.Air then run_command ( "jump" ) end
     end)
     table.insert( events, "bhop" )
 end
@@ -635,7 +636,7 @@ end
 local function SetShirt ( assetID )
 
     if not game.Players.LocalPlayer.Character then game.Players.LocalPlayer.CharacterAdded:Wait() SetShirt ( assetID ) end;
-    if not game.Players.LocalPlayer.Character:FindFirstChildWhichIsA ( "Shirt" ) then Instance.new ( "Shirt", game.Players.LocalPlayer.Character )
+    if not game.Players.LocalPlayer.Character:FindFirstChildWhichIsA ( "Shirt" ) then Instance.new ( "Shirt", game.Players.LocalPlayer.Character ) end;
     game.Players.LocalPlayer.Character:FindFirstChildWhichIsA ( "Shirt" ).ShirtTemplate = "http://www.roblox.com/asset/?id=" .. assetID
 
 end
@@ -643,7 +644,7 @@ end
 local function SetPants ( assetID )
 
     if not game.Players.LocalPlayer.Character then game.Players.LocalPlayer.CharacterAdded:Wait(); SetPants ( assetID ) end;
-    if not game.Players.LocalPlayer.Character:FindFirstChildWhichIsA ( "Pants" ) then Instance.new ( "Pants", game.Players.LocalPlayer.Character )
+    if not game.Players.LocalPlayer.Character:FindFirstChildWhichIsA ( "Pants" ) then Instance.new ( "Pants", game.Players.LocalPlayer.Character ) end;
     game.Players.LocalPlayer.Character:FindFirstChildWhichIsA ( "Pants" ).PantsTemplate = "http://www.roblox.com/asset/?id=" .. assetID
     
 end
