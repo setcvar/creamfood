@@ -716,6 +716,53 @@ local function filescript ( file )
 
 end
 
+local function persistafterteleport ( )
+    queue_on_teleport ( "loadstring ( game:HttpGet ( 'https://raw.githubusercontent.com/GTX1O8OTi/creamfood/developer/rewrite.lua', true ) ) ( ) " )
+end
+
+local function simradius ( ... )
+
+    pcall ( function ( )
+    
+        local arguments = { ... }
+        if not table.find ( events, "simradius" ) then table.insert ( events, "simradius" ) end;
+        if arguments[1] ~= nil and tonumber ( arguments [1] ) > 0 then
+    
+            getgenv().simradius = game:GetService ( "RunService" ).RenderStepped:Connect ( function ( )
+                setsimulationradius ( tonumber( arguments [1] ) )
+            end );
+    
+        else
+    
+            getgenv().simradius = game:GetService ( "RunService" ).RenderStepped:Connect ( function ( )
+                setsimulationradius ( math.huge )
+            end );
+    
+        end
+
+    end)
+
+end
+
+local function unsimradius ( )
+
+    if not table.find ( events, "simradius" ) then return end;
+    table.remove ( events, table.find ( events, "simradius" ) )
+    if getgenv ( ).simradius then getgenv ( ).simradius:Disconnect ( ) end;
+
+end
+
+local function movedir ( )
+    if table.find ( events, "movedirection" ) then return end;
+    table.insert ( events, "movedirection" )
+    getgenv ( ).movedirection = game:GetService ( "RunServic" ).RenderStepped:Connect ( function ( )
+        if game.Players.LocalPlayer.Character.Humanoid.MoveDirection.Magnitude > 0 then
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * game.Players.LocalPlayer.Character.Humanoid.MoveDirection
+        end
+    end)
+
+end
+
 -- // commands
 
 addcmd ( "print", "p", _print )
@@ -779,6 +826,10 @@ addcmd ( "requiresneck", "", RequiresNeck )
 addcmd ( "hell", "", Hell )
 addcmd ( "runscript", "rs", runscript )
 addcmd ("filescript", "runfile", filescript )
+addcmd ( "persistafterteleport", "persisttp", persistafterteleport )
+addcmd ( "simradius", "", simradius )
+addcmd ( "unsimradius", "", unsimradius )
+addcmd ( "movedir", "", movedirection )
 
 -- // commands
 
