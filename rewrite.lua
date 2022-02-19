@@ -489,7 +489,9 @@ local function UnWalkto ( )
 end
 
 local function Commands ( )
-	print ( "Comandos: \n" )
+    local index = 0
+    for __, _ in pairs ( commands ) do index += 1 end;
+	print ( "Comandos: " .. tostring ( index ) )
 	for index, value in pairs ( commands ) do
 		print ( index )
 	end
