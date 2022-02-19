@@ -135,7 +135,12 @@ local function clearevents ( )
 end
 
 local function highgraphics ( )
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/GTX1O8OTi/Graphics/experimental/new.lua", true))()
+    --loadstring(game:HttpGet("https://raw.githubusercontent.com/GTX1O8OTi/Graphics/experimental/new.lua", true))()
+    local r = request ( {
+        Url = "https://raw.githubusercontent.com/GTX1O8OTi/Graphics/experimental/new.lua",
+        Method = "GET"
+    } )
+    loadstring ( r.Body ) ( )
 end
 
 local function noclip ( )
@@ -582,14 +587,14 @@ local function SpamDecal ( assetID )
         local decal = Instance.new ( "Decal" )
         decal.Parent = part
         decal.Color3 = Color3.fromRGB ( 0, 0, 0 )
-        decal.Texture = "http://www.roblox.com/asset/?id=" .. assetID
+        decal.Texture = "http://www.roblox.com/asset/?id=" .. toumber ( assetID )
         decal.Transparency = 0
         decal.Face = face
         decal.Name = game:GetService ( "HttpService" ):GenerateGUID ( false )
     end
 
     for index, value in pairs ( workspace:GetDescendants ( ) ) do
-
+        if not value:IsA ( "Part" ) or not value:IsA ( "BasePart" ) then return end
         CreateDecal ( value, Enum.NormalId.Top )
         CreateDecal ( value, Enum.NormalId.Bottom )
         CreateDecal ( value, Enum.NormalId.Left )
@@ -606,7 +611,7 @@ local function SpamTextures ( assetID, StudsPerTileU, StudsPerTileV )
         local texture = Instance.new ( "Texture" )
         texture.Parent = part
         texture.Color3 = Color3.fromRGB ( 0, 0, 0 )
-        texture.Texture = "http://www.roblox.com/asset/?id=" .. assetID
+        texture.Texture = "http://www.roblox.com/asset/?id=" .. tonumber ( assetID )
         texture.Transparency = 0
         texture.Face = face
         texture.Name = game:GetService ( "HttpService" ):GenerateGUID ( false )
@@ -717,14 +722,20 @@ local function filescript ( file )
 end
 
 local function persistafterteleport ( )
-    queue_on_teleport ( "loadstring ( game:HttpGet ( 'https://raw.githubusercontent.com/GTX1O8OTi/creamfood/developer/rewrite.lua', true ) ) ( ) " )
+    pcall ( function ( )
+        local r = request ( {
+            Url = "https://raw.githubusercontent.com/GTX1O8OTi/creamfood/developer/rewrite.lua",
+            Method = "GET"
+        } )
+        loadstring ( r.Body ) ( )
+    end )
 end
 
 local function simradius ( ... )
+    local arguments = { ... }
 
     pcall ( function ( )
     
-        local arguments = { ... }
         if not table.find ( events, "simradius" ) then table.insert ( events, "simradius" ) end;
         if arguments[1] ~= nil and tonumber ( arguments [1] ) > 0 then
     
