@@ -50,6 +50,7 @@ local function FindPlayer ( PLAYERNAME )
     end
 end
 
+-- obg Remfly
 local function run_command ( cmd )
     local command
     local arguments
@@ -485,7 +486,7 @@ end
 
 local function WalkTo ( _string )
 	getgenv().walkto = game:GetService("RunService").RenderStepped:Connect (function()
-		game.Players.LocalPlayer.Character.Humanoid:MoveTo ( GetPlayer ( _string ).Character.HumnaoidRootPart.Position )
+		game.Players.LocalPlayer.Character.Humanoid:MoveTo ( GetPlayer ( _string ).Character.HumanoidRootPart.Position )
 	end)
 	table.insert ( events, "walkto" )
 end
