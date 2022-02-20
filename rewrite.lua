@@ -788,8 +788,8 @@ end
 getgenv ( ).waypoints = { }
 local function MakeWaypoint ( name )
     
-    if arguments [1] ~= nil then getgenv ( ).waypoints [ arguments [1] ] = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame; return end;
-
+    getgenv ( ).waypoints [ name ] = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame;
+ 
     game.StarterGui:SetCore ( 'SendNotification', {
         Title = 'Creamfood',
         Text = 'cmon bro, give it a name',
@@ -800,31 +800,29 @@ end
 
 local function GotoWaypoint ( name )
 
-    if table.find (getgenv ( ).waypoints, name) then game.Players.LocalPlayer.Character.Humanoid.CFrame = getgenv ( ).waypoints [ name ] return end;
+    local found = false
+    for index, value in pairs ( getgenv ( ).waypoints ) do
 
-    game.StarterGui:SetCore ( 'SendNotification', {
-        Title = 'Creamfood',
-        Text = 'No waypoint found',
-        Duration = 5
-    } )
+        if tostring ( index ) == name then game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = value; found = true break end;
+
+    end
+
+    if not found then
+        game.StarterGui:SetCore ( 'SendNotification', {
+            Title = 'Creamfood',
+            Text = 'No waypoint found',
+            Duration = 5
+        } )
+    end
+
+    found = false
 
 end
 
 local function DeleteWaypoints ( name )
 
-    if table.find ( getgenv ( ).waypoints ) then table.remove ( getgenv ( ).waypoints, table.find ( getgenv ( ).waypoints, name ) ) return end;
-
-    game.StarterGui:SetCore ( 'SendNotification', {
-        Title = 'Creamfood',
-        Text = 'No waypoint found',
-        Duration = 5
-    } )
-
-end
-
-local function RenameWaypoints ( name, new_name )
-
-    if table.find ( getgenv ( ).waypoints, name ) then getgenv ( ).waypoints [ new_name ] = getgenv ( ).waypoints [ name ]; table.remove ( getgenv ( ).waypoints, table.find ( getgenv ( ).waypoints, name ) ) return end;
+    print ( name )
+    table.remove ( getgenv ( ).waypoints, table.find ( getgenv ( ).waypoints, name ) ) -- tf does this not work?
 
     game.StarterGui:SetCore ( 'SendNotification', {
         Title = 'Creamfood',
@@ -836,8 +834,16 @@ end
 
 local function ClearWaypoints ( name )
 
+    table.clear ( getgenv ( ).waypoints )
+
+end
+
+local function printwaypoints ( )
+
     for index, value in pairs ( getgenv ( ).waypoints ) do
-        table.remove ( getgenv ( ).waypoints, index )
+
+        print ( index )
+
     end
 
 end
@@ -854,7 +860,10 @@ end
 
 local function WalkToWaypoint ( name )
 
-    if table.find ( getgenv ( ).waypoints, name ) then game.Players.LocalPlayer.Character.Humanoid:MoveTo ( getgenv ( ).waypoints [ name ] ) end;
+    for index, value in pairs ( getgenv ( ).waypoints ) do
+        if tostring ( index ) == name then game.Players.LocalPlayer.Character.Humanoid:MoveTo ( value.Position ) end;
+    end
+
     game.StarterGui:SetCore ( 'SendNotification', {
         Title = 'Creamfood',
         Text = 'No waypoint found',
@@ -872,7 +881,7 @@ end
 
 local function changefov ( fov )
 
-    if fov <= 0 then return end
+    if tonumber ( fov ) <= 0 then return end
     workspace.CurrentCamera.FieldOfView = tonumber ( fov )
 
 end
@@ -912,9 +921,9 @@ end
 getgenv ( ).disabledguis = { }
 local function nogui ( )
 
-    for index, value in pairs ( game.Players.LocalPlayer.PlayerGui ) do
+    for index, value in pairs ( game.Players.LocalPlayer.PlayerGui:GetChildren ( ) ) do
 
-        if value.Enabled == false then table.insert ( getgenv ( ).disabledguis, value.Name ); continue end
+        if value.Enabled == false then table.insert ( getgenv ( ).disabledguis, value.Name ); end
         value.Enabled = false
 
     end
@@ -922,30 +931,44 @@ end
 
 local function yesgui ( )
 
-    for index, value in pairs ( game.Players.LocalPlayer.PlayerGui ) do
+    for index, value in pairs ( game.Players.LocalPlayer.PlayerGui:GetChildren ( ) ) do
         
-        if table.find (getgenv ( ).disabledguis, value.Name ) then table.remove ( getgenv ( ).disabledguis, table.find ( getgenv ( ).disabledguis, value.Name ) ) continue end;
+        if table.find (getgenv ( ).disabledguis, value.Name ) then table.remove ( getgenv ( ).disabledguis, table.find ( getgenv ( ).disabledguis, value.Name ) ); continue end;
         value.Enabled = true
 
     end
 
 end
 
-local function SaveWaypoints ( ... )
+local function SaveWaypoints ( )
 
     local HTTPService = game:GetService ( "HttpService" )
-    local arguments = { ... }
-    if arguments [1] then writefile ( arguments [1], HTTPService:JSONEncode ( getgenv ( ).waypoints ) )
-    writefile ( "creamfood-waypoints.txt", HTTPService:JSONEncode ( getgenv ( ).waypoints ) )
+    
+    local ttable = {}
+    for index, value in pairs ( getgenv ( ).waypoints ) do
+        table.insert ( ttable, {
+            name = index,
+            pos = tostring ( value )
+        })
+    end
+    
+    local Encoded = HTTPService:JSONEncode ( ttable )
+    writefile ( "creamfood-waypoints.txt", Encoded )
 
 end
 
-local function LoadWaypoints ( ... )
+local function LoadWaypoints ( )
 
     local HTTPService = game:GetService ( "HttpService" )
-    local arguments = { ... }
-    if arguments [1] then getgenv ( ).waypoints = HTTPService:JSONDecode ( readfile ( arguments[1] ) ) return end;
-    getgenv ( ).waypoints = HTTPService:JSONDecode ( readfile ( "creamfood-waypoints.txt" ) )
+    local Encoded = HTTPService:JSONDecode ( readfile ( "creamfood-waypoints.txt" ) )
+
+    for index, value in pairs ( Encoded ) do
+
+        table.insert ( getgenv ( ).waypoints, value.name )
+        local stocf = CFrame.new ( table.unpack ( value.pos:gsub (" ", ""):split (",") ) ) -- lembrete pra mim mesmo: aprender mais sobre strings
+        getgenv ( ).waypoints [ value.name ] = stocf
+
+    end
 
 end
 
@@ -1033,6 +1056,7 @@ addcmd ( "nogui", "", nogui )
 addcmd ( "yesgui", "restoregui", yesgui )
 addcmd ( "savewaypoints", "savewp", SaveWaypoints )
 addcmd ( "loadwaypoints", "loadwp", LoadWaypoints )
+addcmd ( "printwaypoints", "printwp", printwaypoints )
 
 -- // commands
 
