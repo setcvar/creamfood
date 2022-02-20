@@ -77,7 +77,9 @@ local function run_command ( cmd )
             commands[command](arguments)
         end
     end
-    pcall ( function ( ) coroutine.resume( coroutine.create ( run ) ); end )
+    local success, err = pcall ( function ( ) coroutine.resume( coroutine.create ( run ) ); end )
+    if success then return end;
+    if err then return end;
 end
 
 local function _print ( _string )
@@ -182,7 +184,7 @@ local function colorful_world ( )
 end
 
 local function drugs ( )
-    math.randomseed ( game.Players.LocalPlayer.UserId + 50 )
+    math.randomseed ( game.Players.LocalPlayer.UserId + (100 / 2 * 6 + 2 - 1) + (math.random ( 0, math.random ( 0, 49604212 ) ) * 0.5 ) - 6 )
     for index, value in pairs ( workspace:GetDescendants() ) do
         if value:IsA ( "BasePart" ) or value:IsA ( "Part" ) then
             value.Color = Color3.fromRGB ( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 ) )
@@ -256,7 +258,6 @@ local function Thaw ( _string )
         end
     end
 end
-
 
 local function _Freeze ( _string )
 
@@ -527,6 +528,9 @@ local function Spam ( _string )
     while wait ( getgenv ( ).spamspeed ) and getgenv().spam == true do
         event:FireServer ( _string, "All" )
     end
+
+
+
     table.insert ( events, "spam" )
 end
 
@@ -722,13 +726,20 @@ local function filescript ( file )
 end
 
 local function persistafterteleport ( )
-    pcall ( function ( )
+
+    local _script = [[pcall ( function ( )
         local r = request ( {
             Url = "https://raw.githubusercontent.com/GTX1O8OTi/creamfood/developer/rewrite.lua",
             Method = "GET"
         } )
         loadstring ( r.Body ) ( )
-    end )
+    end )]]
+    queue_on_teleport ( _script )
+    game.StarterGui:SetCore ( "SendNotification", {
+        Title = 'Creamfood',
+        Text = 'Contact navet#2416 if it doesnt work',
+        Duration = 5
+    } )
 end
 
 local function simradius ( ... )
@@ -774,23 +785,187 @@ local function movedir ( )
 
 end
 
+getgenv ( ).waypoints = { }
+local function MakeWaypoint ( name )
+    
+    if arguments [1] ~= nil then getgenv ( ).waypoints [ arguments [1] ] = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame; return end;
+
+    game.StarterGui:SetCore ( 'SendNotification', {
+        Title = 'Creamfood',
+        Text = 'cmon bro, give it a name',
+        Duration = 10
+    } )
+
+end
+
+local function GotoWaypoint ( name )
+
+    if table.find (getgenv ( ).waypoints, name) then game.Players.LocalPlayer.Character.Humanoid.CFrame = getgenv ( ).waypoints [ name ] return end;
+
+    game.StarterGui:SetCore ( 'SendNotification', {
+        Title = 'Creamfood',
+        Text = 'No waypoint found',
+        Duration = 5
+    } )
+
+end
+
+local function DeleteWaypoints ( name )
+
+    if table.find ( getgenv ( ).waypoints ) then table.remove ( getgenv ( ).waypoints, table.find ( getgenv ( ).waypoints, name ) ) return end;
+
+    game.StarterGui:SetCore ( 'SendNotification', {
+        Title = 'Creamfood',
+        Text = 'No waypoint found',
+        Duration = 5
+    } )
+
+end
+
+local function RenameWaypoints ( name, new_name )
+
+    if table.find ( getgenv ( ).waypoints, name ) then getgenv ( ).waypoints [ new_name ] = getgenv ( ).waypoints [ name ]; table.remove ( getgenv ( ).waypoints, table.find ( getgenv ( ).waypoints, name ) ) return end;
+
+    game.StarterGui:SetCore ( 'SendNotification', {
+        Title = 'Creamfood',
+        Text = 'No waypoint found',
+        Duration = 5
+    } )
+
+end
+
+local function ClearWaypoints ( name )
+
+    for index, value in pairs ( getgenv ( ).waypoints ) do
+        table.remove ( getgenv ( ).waypoints, index )
+    end
+
+end
+
+local function godmode ( )
+
+    -- hello person reading this
+    local sound = Instance.new ( "Sound" )
+    sound.SoundId = "rbxassetid://1874176440"
+    sound.Volume = 10
+    sound.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
+
+end
+
+local function WalkToWaypoint ( name )
+
+    if table.find ( getgenv ( ).waypoints, name ) then game.Players.LocalPlayer.Character.Humanoid:MoveTo ( getgenv ( ).waypoints [ name ] ) end;
+    game.StarterGui:SetCore ( 'SendNotification', {
+        Title = 'Creamfood',
+        Text = 'No waypoint found',
+        Duration = 5
+    } )
+
+end
+
+local function chat ( ... )
+
+    local arguments = { ... }
+    if arguments [1] ~= nil and arguments [2] then game.ReplicatedStorage.SayMessageRequest:FireServer ( arguments [1], arguments [2] ) elseif arguments [1] ~= nil then game.ReplicatedStorage.SayMessageRequest:FireServer ( arguments [1], "All") end;
+
+end
+
+local function changefov ( fov )
+
+    if fov <= 0 then return end
+    workspace.CurrentCamera.FieldOfView = tonumber ( fov )
+
+end
+
+local function zoom ( distance )
+
+    workspace.CurrentCamera.Zoom = tonumber ( distance )
+
+end
+
+local function globalshadows ( ... )
+
+    local args = { ... }
+    local bool = args [1]
+
+    if bool == "on" or bool == "1" then game.Lighting.GlobalShadows = true return end;
+    if bool == "off" or bool == "0" then game.Lighting.GlobalShadows = false return end;
+    if not bool then return end;
+
+end
+
+local function printuserid ( ... )
+
+    local arguments = { ... }
+    if arguments [1] then print ( GetPlayer ( arguments [1] ).UserId ) return end;
+    print ( game.Players.LocalPlayer.UserId )
+
+end
+
+local function copyuserid ( ... )
+
+    local arguments = { ... }
+    if arguments [1] then setclipboard ( GetPlayer ( arguments [1] ).UserId ) return end;
+
+end
+
+getgenv ( ).disabledguis = { }
+local function nogui ( )
+
+    for index, value in pairs ( game.Players.LocalPlayer.PlayerGui ) do
+
+        if value.Enabled == false then table.insert ( getgenv ( ).disabledguis, value.Name ); continue end
+        value.Enabled = false
+
+    end
+end
+
+local function yesgui ( )
+
+    for index, value in pairs ( game.Players.LocalPlayer.PlayerGui ) do
+        
+        if table.find (getgenv ( ).disabledguis, value.Name ) then table.remove ( getgenv ( ).disabledguis, table.find ( getgenv ( ).disabledguis, value.Name ) ) continue end;
+        value.Enabled = true
+
+    end
+
+end
+
+local function SaveWaypoints ( ... )
+
+    local HTTPService = game:GetService ( "HttpService" )
+    local arguments = { ... }
+    if arguments [1] then writefile ( arguments [1], HTTPService:JSONEncode ( getgenv ( ).waypoints ) )
+    writefile ( "creamfood-waypoints.txt", HTTPService:JSONEncode ( getgenv ( ).waypoints ) )
+
+end
+
+local function LoadWaypoints ( ... )
+
+    local HTTPService = game:GetService ( "HttpService" )
+    local arguments = { ... }
+    if arguments [1] then getgenv ( ).waypoints = HTTPService:JSONDecode ( readfile ( arguments[1] ) ) return end;
+    getgenv ( ).waypoints = HTTPService:JSONDecode ( readfile ( "creamfood-waypoints.txt" ) )
+
+end
+
 -- // commands
 
 addcmd ( "print", "p", _print )
 addcmd ( "speed", "ws" , walkspeed )
-addcmd ( "jumppower", "jpp",  jumppower)
-addcmd ( "setmaxfps", "mfps",  setmaxfps)
-addcmd ( "antiafk", "aa", antiafk )
-addcmd ( "unantiafk", "unaa", unantiafk )
-addcmd ( "spin", "sp", spin )
-addcmd ( "unspin", "unsp", unspin )
-addcmd ( "clearevents", "ce", clearevents )
+addcmd ( "jumppower", "jp",  jumppower)
+addcmd ( "setmaxfps", "",  setmaxfps)
+addcmd ( "antiafk", "", antiafk )
+addcmd ( "unantiafk", "", unantiafk )
+addcmd ( "spin", "", spin )
+addcmd ( "unspin", "", unspin )
+addcmd ( "clearevents", "", clearevents )
 addcmd ( "noclip", "nc", noclip )
-addcmd ( "clip", "c", clip )
+addcmd ( "clip", "", clip )
 addcmd ( "jump", "", jump )
-addcmd ( "sit", "sit", sit )
+addcmd ( "sit", "", sit )
 addcmd ( "colorful_world", "", colorful_world )
-addcmd ( "drugs", "drgs", drugs )
+addcmd ( "drugs", "", drugs )
 addcmd ( "chatlog", "clog", chatlog_everyone )
 addcmd ( "savechatlog", "saveclog", save_chatlogs )
 addcmd ( "goto", "", _goto )
@@ -841,6 +1016,23 @@ addcmd ( "persistafterteleport", "persisttp", persistafterteleport )
 addcmd ( "simradius", "", simradius )
 addcmd ( "unsimradius", "", unsimradius )
 addcmd ( "movedir", "", movedirection )
+addcmd ( "makewaypoint", "mkwp", MakeWaypoint )
+addcmd ( "deletewaypoint", "delwp", DeleteWaypoints )
+addcmd ( "renamewaypoint", "renamewp", RenameWaypoints )
+addcmd ( "gotowaypoint", "gotowp", GotoWaypoint )
+addcmd ( "clearwaypoints", "clearwp", ClearWaypoints )
+addcmd ( "godmode", "god", godmode )
+addcmd ( "walktowaypoint", "walktowp", WalkToWaypoint )
+addcmd ( "chat", "say", chat )
+addcmd ( "fov", "changefov", changefov )
+addcmd ( "zoom", "", zoom )
+addcmd ( "globalshadows", "gshadows", globalshadows )
+addcmd ( "printuserid", "pid", printuserid )
+addcmd ( "copyuserid", "cid", copyuserid )
+addcmd ( "nogui", "", nogui )
+addcmd ( "yesgui", "restoregui", yesgui )
+addcmd ( "savewaypoints", "savewp", SaveWaypoints )
+addcmd ( "loadwaypoints", "loadwp", LoadWaypoints )
 
 -- // commands
 
