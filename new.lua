@@ -41,9 +41,8 @@ local function Interface ( ... )
 
 		local arguments = table.concat(list, " ")
 
-		local function temporary() commands[command](arguments) end
-		local success, err = pcall (function () coroutine.resume (coroutine.create (temporary) ) end)
-
+		local f = coroutine.wrap(function() commands[command](arguments) end)
+		f()
 	end
 
 	-- check if argument[1] is a command
@@ -60,7 +59,7 @@ local function Interface ( ... )
 		return
 	end
 
-  -- rmcmd name
+	-- rmcmd name
 	if command and command == "rmcmd" and arguments then
 		table.remove(commands, table.find(commands, arguments))
 		return
