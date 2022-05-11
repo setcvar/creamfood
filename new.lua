@@ -11,7 +11,7 @@ local function Interface ( ... )
 	local function_arguments = { ... }
 	
 	local command = function_arguments[1]
-	local arguments function_arguments[2]
+	local arguments = function_arguments[2]
 	local callback = function_arguments[3]
 	local command_alias = function_arguments[4]
 
