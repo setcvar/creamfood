@@ -1,4 +1,3 @@
-local alias = {}
 local commands = {}
 
 local function ICommand (command) 
