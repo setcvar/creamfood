@@ -1,5 +1,3 @@
-local funcs = {
-
 local function _print ( _string )
     print ( _string )
 end
@@ -889,7 +887,3 @@ local function LoadWaypoints ( )
     end
 
 end
-
-}
-
-return funcs
