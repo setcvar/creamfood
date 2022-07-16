@@ -50,37 +50,30 @@ local function FindPlayer ( PLAYERNAME )
     end
 end
 
--- obg Remfly
-local function run_command ( cmd )
-    local command
-    local arguments
-    local _index = 0
-    for result in string.gmatch(cmd, "%g+") do
-        if _index == 0 and commands[result] then
-            command = result
+local function ICommand (command) 
+    local list = {}
 
-        elseif _index == 0 and not commands[result] then
-            for i,v in pairs (alias) do
-                if i == result then command = v; break end
+    for word in string.gmatch(command, "%g+") do
+            table.insert(list, tostring(word))
+    end
+
+    local cmd = list[1]
+    if not cmd == commands[cmd] then
+            for index, value in pairs (alias) do
+                    if index == cmd then
+                            cmd = value
+                            return
+                    end
             end
-
-        elseif _index == 1 then
-            arguments = result
-
-        elseif _index >= 2 then
-            arguments = arguments .. " " ..result
-        end
-        _index = _index + 1
     end
 
-    local function run ( )
-        if commands[command] then
-            commands[command](arguments)
-        end
-    end
-    local success, err = pcall ( function ( ) coroutine.resume( coroutine.create ( run ) ); end )
-    if success then return end;
-    if err then return end;
+    table.remove(list,1)
+
+    local arguments = table.concat(list, " ")
+
+    local f = coroutine.wrap(function() commands[cmd](arguments) end)
+    f()
+    
 end
 
 local function _print ( _string )
