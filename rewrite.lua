@@ -12,6 +12,14 @@ local function addcmd(cmd, _alias, callback)
     alias[_alias] = cmd
 end
 
+local function Notification (message, color, size)
+    game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", {
+        Text = message,
+        Color = color,
+        FontSize = size
+    })
+end
+
 local function ICommand (command) 
     local list = {}
 
@@ -35,7 +43,12 @@ local function ICommand (command)
     print(arguments)
 
     local f = coroutine.wrap(function() commands[cmd](arguments) end)
-    f()
+    local success, errMessage = pcall( f )
+    if success then return end
+    if errMessage then
+        Notification ("Oops, something is not right. Error message: " .. tostring (errMessage), Color3.fromRGB(150,150,150), Enum.FontSize.Size18)
+        return
+    end
     
 end
 
@@ -822,11 +835,7 @@ local function DeleteWaypoints ( name )
     print ( name )
     table.remove ( getgenv ( ).waypoints, table.find ( getgenv ( ).waypoints, name ) ) -- tf does this not work?
 
-    game.StarterGui:SetCore ( 'SendNotification', {
-        Title = 'Creamfood',
-        Text = 'No waypoint found',
-        Duration = 5
-    } )
+    Notification ("No waypoint found", Color3.fromRGB(150,150,150), Enum.FontSize.Size18)
 
 end
 
@@ -863,7 +872,9 @@ end
 local function chat ( ... )
 
     local arguments = { ... }
-    if arguments [1] ~= nil and arguments [2] then game.ReplicatedStorage.SayMessageRequest:FireServer ( arguments [1], arguments [2] ) elseif arguments [1] ~= nil then game.ReplicatedStorage.SayMessageRequest:FireServer ( arguments [1], "All") end;
+    if arguments [1] ~= nil and arguments [2] then
+    game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer ( arguments [1], arguments [2] )
+elseif arguments [1] ~= nil then game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer ( arguments [1], "All") end;
 
 end
 
@@ -1013,13 +1024,7 @@ end
     follow(character.HumanoidRootPart.Position)
 end
 
-local function Notification (message, color, size)
-    game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", {
-        Text = message,
-        Color = color,
-        FontSize = size
-    })
-end
+
 
 
 -- // commands
@@ -1110,8 +1115,8 @@ addcmd ( "pfgoto", "", PFGotoPlayer )
 
 -- // commands
 
-Notification ("Press F9 to view commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
-ICommand ("cmds")
+Notification ("Use cmds to view the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
+Notification ("Making a new ui for it soon, use F9 to see the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size16)
 
 local function CreateInstance(cls,props)
     local inst = Instance.new(cls)
