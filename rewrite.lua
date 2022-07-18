@@ -1145,4 +1145,3 @@ local function Focus ()
 end
 
 game:GetService("ContextActionService"):BindAction("Focus", Focus, false, Enum.KeyCode.RightBracket)
-
