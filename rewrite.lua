@@ -12,6 +12,33 @@ local function addcmd(cmd, _alias, callback)
     alias[_alias] = cmd
 end
 
+local function ICommand (command) 
+    local list = {}
+
+    for word in string.gmatch(command, "%g+") do
+            table.insert(list, tostring(word))
+    end
+
+    local cmd = list[1]
+    if not cmd == commands[cmd] then
+            for index, value in pairs (alias) do
+                    if index == cmd then
+                            cmd = value
+                            return
+                    end
+            end
+    end
+
+    table.remove(list,1)
+
+    local arguments = table.concat(list, " ")
+    print(arguments)
+
+    local f = coroutine.wrap(function() commands[cmd](arguments) end)
+    f()
+    
+end
+
 local function GetPlayer(Name)
 	for _,v in ipairs(game.Players:GetPlayers()) do
 
@@ -48,32 +75,6 @@ local function FindPlayer ( PLAYERNAME )
     elseif PLAYERNAME == "all" then
         return 1
     end
-end
-
-local function ICommand (command) 
-    local list = {}
-
-    for word in string.gmatch(command, "%g+") do
-            table.insert(list, tostring(word))
-    end
-
-    local cmd = list[1]
-    if not cmd == commands[cmd] then
-            for index, value in pairs (alias) do
-                    if index == cmd then
-                            cmd = value
-                            return
-                    end
-            end
-    end
-
-    table.remove(list,1)
-
-    local arguments = table.concat(list, " ")
-
-    local f = coroutine.wrap(function() commands[cmd](arguments) end)
-    f()
-    
 end
 
 local function _print ( _string )
@@ -131,11 +132,14 @@ local function clearevents ( )
 end
 
 local function highgraphics ( )
+    local link = "https://raw.githubusercontent.com/GTX1O8OTi/Graphics/experimental/new.lua"
     --loadstring(game:HttpGet("https://raw.githubusercontent.com/GTX1O8OTi/Graphics/experimental/new.lua", true))()
     local r = request ( {
-        Url = "https://raw.githubusercontent.com/GTX1O8OTi/Graphics/experimental/new.lua",
+        Url = link,
         Method = "GET"
     } )
+
+    if not request then loadstring ( game:HttpGet (link) )(); return end
     loadstring ( r.Body ) ( )
 end
 
@@ -842,16 +846,6 @@ local function printwaypoints ( )
 
 end
 
-local function godmode ( )
-
-    -- hello person reading this
-    local sound = Instance.new ( "Sound" )
-    sound.SoundId = "rbxassetid://1874176440"
-    sound.Volume = 10
-    sound.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
-
-end
-
 local function WalkToWaypoint ( name )
 
     for index, value in pairs ( getgenv ( ).waypoints ) do
@@ -966,6 +960,68 @@ local function LoadWaypoints ( )
 
 end
 
+local function PFGotoPlayer (player)
+local Pathfinding = game:GetService("PathfindingService")
+
+local _player = GetPlayer(player)
+local character = _player.Character
+local humanoid = game.Players.LocalPlayer.Character:WaitForChild("Humanoid")
+
+local path = Pathfinding:CreatePath({
+    AgentRadius = 0.5,
+    AgentHeight = 6,
+    AgentCanJump = true,
+})
+
+local waypoints
+local nextWaypointIndex
+local reachedConnection
+local blockedConnection
+
+local function follow(dest)
+    local success, err = pcall(function()
+        path:ComputeAsync(game.Players.LocalPlayer.Character.HumanoidRootPart.Position, dest)
+    end)
+
+    if success and path.Status == Enum.PathStatus.Success then
+        waypoints = path:GetWaypoints()
+
+        blockedConnection = path.Blocked:Connect(function(blockedWaypointIndex)
+            if blockedWaypointIndex >= nextWaypointIndex then
+                blockedConnection:Disconnect()
+                follow(dest)
+            end
+        end)
+
+        if not reachedConnection then
+            reachedConnection = humanoid.MoveToFinished:Connect(function(reached)
+                if reached and nextWaypointIndex < #waypoints then
+                    nextWaypointIndex += 1
+                    humanoid:MoveTo(waypoints[nextWaypointIndex].Position)
+                else
+                    reachedConnection:Disconnect()
+					blockedConnection:Disconnect()
+                end
+            end)
+        end
+
+        nextWaypointIndex = 2
+        humanoid:MoveTo(waypoints[nextWaypointIndex].Position)
+    end
+end
+
+    follow(character.HumanoidRootPart.Position)
+end
+
+local function Notification (message, color, size)
+    game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", {
+        Text = message,
+        Color = color,
+        FontSize = size
+    })
+end
+
+
 -- // commands
 
 addcmd ( "print", "p", _print )
@@ -1038,7 +1094,6 @@ addcmd ( "deletewaypoint", "delwp", DeleteWaypoints )
 addcmd ( "renamewaypoint", "renamewp", RenameWaypoints )
 addcmd ( "gotowaypoint", "gotowp", GotoWaypoint )
 addcmd ( "clearwaypoints", "clearwp", ClearWaypoints )
-addcmd ( "godmode", "god", godmode )
 addcmd ( "walktowaypoint", "walktowp", WalkToWaypoint )
 addcmd ( "chat", "say", chat )
 addcmd ( "fov", "changefov", changefov )
@@ -1051,8 +1106,12 @@ addcmd ( "yesgui", "restoregui", yesgui )
 addcmd ( "savewaypoints", "savewp", SaveWaypoints )
 addcmd ( "loadwaypoints", "loadwp", LoadWaypoints )
 addcmd ( "printwaypoints", "printwp", printwaypoints )
+addcmd ( "pfgoto", "", PFGotoPlayer )
 
 -- // commands
+
+Notification ("Press F9 to view commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
+ICommand ("cmds")
 
 local function CreateInstance(cls,props)
     local inst = Instance.new(cls)
@@ -1065,17 +1124,20 @@ end
 local ScreenGui = CreateInstance('ScreenGui',{DisplayOrder=0,Enabled=true,ResetOnSpawn=true,Name='ScreenGui', Parent=gethui() or game.CoreGui})
 local TextBox = CreateInstance('TextBox',{ClearTextOnFocus=true,Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size14,MultiLine=false,Text='',TextColor3=Color3.new(0, 0, 0), PlaceholderText='', PlaceholderColor3=Color3.new(0.7, 0.7, 0.7),TextScaled=false,TextSize=14,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=1,ClipsDescendants=false,Draggable=false,Position=UDim2.new(-0.00244425423, 0, 0.770705044, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 200, 0, 50),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='TextBox',Parent = ScreenGui})
 
-TextBox.FocusLost:Connect(function(enter)
-	if enter then
-		run_command( TextBox.Text )
+local function FocusLost (enter)
+    if enter then
+        ICommand (TextBox.Text)
 		TextBox.Text = ""
 	end
-end)
+end
 
-game:GetService("ContextActionService"):BindAction("Focus", function()
-	if TextBox.Visible then
-		TextBox:CaptureFocus()
-		game:GetService("RunService").RenderStepped:Wait()
-		TextBox.Text = ""
-	end
-end, false, Enum.KeyCode.RightBracket)
+TextBox.FocusLost:Connect(FocusLost)
+
+local function Focus ()
+    TextBox:CaptureFocus()
+    game:GetService("RunService").RenderStepped:Wait()
+    TextBox.Text = ""
+end
+
+game:GetService("ContextActionService"):BindAction("Focus", Focus, false, Enum.KeyCode.RightBracket)
+
