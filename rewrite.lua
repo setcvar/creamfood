@@ -40,13 +40,12 @@ local function ICommand (command)
     table.remove(list,1)
 
     local arguments = table.concat(list, " ")
-    print(arguments)
 
     local f = coroutine.wrap(function() commands[cmd](arguments) end)
     local success, errMessage = pcall( f )
     if success then return end
     if errMessage then
-        Notification ("Oops, something is not right. Error message: " .. tostring (errMessage), Color3.fromRGB(150,150,150), Enum.FontSize.Size18)
+        Notification ("Oops, something is not right. Error message: " .. tostring (errMessage), Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
         return
     end
     
@@ -60,6 +59,7 @@ local function GetPlayer(Name)
 		end
 
 	end
+    Notification ("Couldn't find player!", Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
 	return nil
 end
 
@@ -235,7 +235,7 @@ end
 local function save_chatlogs ( )
     if writefile then writefile ( "creamfood_chatlogs.txt",  table.concat(getgenv().chatlog_messages, "\n"))
     else
-        -- error
+        Notification ("Oops! Something gone wrong")
     end
 end
 
@@ -512,11 +512,7 @@ local function Commands ( )
 	for index, value in pairs ( commands ) do
 		print ( index )
 	end
-    game.StarterGui:SetCore( "SendNotification", { 
-        Title = 'Creamfood',
-        Text = 'Press F9 to view the commands.',
-        Duration = 5
-    })
+    Notification ("Press F9 to view the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
 end
 
 local function ShiftSpeed ( int )
@@ -539,8 +535,6 @@ local function Spam ( _string )
     while wait ( getgenv ( ).spamspeed ) and getgenv().spam == true do
         event:FireServer ( _string, "All" )
     end
-
-
 
     table.insert ( events, "spam" )
 end
@@ -610,13 +604,17 @@ local function SpamDecal ( assetID )
 
     for index, value in pairs ( workspace:GetDescendants ( ) ) do
         if not value:IsA ( "Part" ) or not value:IsA ( "BasePart" ) then return end
+        --[[
         CreateDecal ( value, Enum.NormalId.Top )
         CreateDecal ( value, Enum.NormalId.Bottom )
         CreateDecal ( value, Enum.NormalId.Left )
         CreateDecal ( value, Enum.NormalId.Right )
         CreateDecal ( value, Enum.NormalId.Back )
         CreateDecal ( value, Enum.NormalId.Front )
-
+        ]]
+        for i,v in pairs (Enum.NormalId) do
+            CreateDecal (value, i)
+        end
     end
 end
 
@@ -746,11 +744,7 @@ local function persistafterteleport ( )
         loadstring ( r.Body ) ( )
     end )]]
     queue_on_teleport ( _script )
-    game.StarterGui:SetCore ( "SendNotification", {
-        Title = 'Creamfood',
-        Text = 'Contact navet#2416 if it doesnt work',
-        Duration = 5
-    } )
+    Notification ("Contact navet#2416 if it doesnt work", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
 end
 
 local function simradius ( ... )
@@ -788,7 +782,7 @@ end
 local function movedir ( )
     if table.find ( events, "movedirection" ) then return end;
     table.insert ( events, "movedirection" )
-    getgenv ( ).movedirection = game:GetService ( "RunServic" ).RenderStepped:Connect ( function ( )
+    getgenv ( ).movedirection = game:GetService ( "RunService" ).RenderStepped:Connect ( function ( )
         if game.Players.LocalPlayer.Character.Humanoid.MoveDirection.Magnitude > 0 then
             game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * game.Players.LocalPlayer.Character.Humanoid.MoveDirection
         end
@@ -807,6 +801,8 @@ local function MakeWaypoint ( name )
         Duration = 10
     } )
 
+    Notification ("cmon bro, give it a name", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
+
 end
 
 local function GotoWaypoint ( name )
@@ -817,15 +813,7 @@ local function GotoWaypoint ( name )
         if tostring ( index ) == name then game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = value; found = true break end;
 
     end
-
-    if not found then
-        game.StarterGui:SetCore ( 'SendNotification', {
-            Title = 'Creamfood',
-            Text = 'No waypoint found',
-            Duration = 5
-        } )
-    end
-
+    if not found then Notification ("No waypoint found", Color3.fromRGB(150,150,150), Enum.FontSize.Size18) end
     found = false
 
 end
@@ -861,12 +849,7 @@ local function WalkToWaypoint ( name )
         if tostring ( index ) == name then game.Players.LocalPlayer.Character.Humanoid:MoveTo ( value.Position ) end;
     end
 
-    game.StarterGui:SetCore ( 'SendNotification', {
-        Title = 'Creamfood',
-        Text = 'No waypoint found',
-        Duration = 5
-    } )
-
+    Notification ("No waypoint found", Color3.fromRGB(150,150,150), Enum.FontSize.Size18)
 end
 
 local function chat ( ... )
@@ -874,7 +857,7 @@ local function chat ( ... )
     local arguments = { ... }
     if arguments [1] ~= nil and arguments [2] then
     game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer ( arguments [1], arguments [2] )
-elseif arguments [1] ~= nil then game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer ( arguments [1], "All") end;
+    elseif arguments [1] ~= nil then game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer ( arguments [1], "All") end;
 
 end
 
@@ -902,18 +885,19 @@ local function globalshadows ( ... )
 
 end
 
-local function printuserid ( ... )
-
-    local arguments = { ... }
-    if arguments [1] then print ( GetPlayer ( arguments [1] ).UserId ) return end;
-    print ( game.Players.LocalPlayer.UserId )
-
+local function printuserid ( player )
+    local user = GetPlayer (player)
+    if user then
+        print (user.UserId)
+    end
 end
 
-local function copyuserid ( ... )
+local function copyuserid ( player )
 
-    local arguments = { ... }
-    if arguments [1] then setclipboard ( GetPlayer ( arguments [1] ).UserId ) return end;
+    local user = GetPlayer (player)
+    if user then
+        setclipboard (player.UserId)
+    end
 
 end
 
@@ -971,7 +955,7 @@ local function LoadWaypoints ( )
 
 end
 
-local function PFGotoPlayer (player)
+local function PFGotoPlayer (player) -- thx roblox wiki / obg roblox wiki
 local Pathfinding = game:GetService("PathfindingService")
 
 local _player = GetPlayer(player)
@@ -1024,8 +1008,36 @@ end
     follow(character.HumanoidRootPart.Position)
 end
 
+local function PredictPlayer (player) -- Linear
+    local user = GetPlayer (player)
+    local character = user.Character
+    local torso = character.HumanoidRootPart
+    game:GetService("RunService").Stepped:Connect(function()
+        for i,v in pairs (character:GetChildren()) do
+            if v:IsA("BasePart") and v.Name == "HumanoidRootPart" and v:GetAttribute("h") then v:Destroy() end
+        end
+        local currentVelocity = character.HumanoidRootPart.AssemblyLinearVelocity
+        local currentPosition = character.HumanoidRootPart.Position
+        local predictedPosition = currentPosition + currentVelocity * 0.3
 
+        local part = Instance.new("Part")
+        part.CanCollide = false
+        part.Anchored = true
+        part.Size = Vector3.new(1,1,1)
+        part.Parent = user.Character
+        part.Position = predictedPosition
+        part.Name = "HumanoidRootPart"
+        part:SetAttribute("h", 1)
+    end)
+end
 
+local function PredictAll ()
+    for index, value in pairs (game.Players:GetPlayers()) do
+        if value.Name ~= game.Players.LocalPlayer.Name then
+            PredictPlayer(value.Name)
+        end
+    end
+end
 
 -- // commands
 
@@ -1112,11 +1124,12 @@ addcmd ( "savewaypoints", "savewp", SaveWaypoints )
 addcmd ( "loadwaypoints", "loadwp", LoadWaypoints )
 addcmd ( "printwaypoints", "printwp", printwaypoints )
 addcmd ( "pfgoto", "", PFGotoPlayer )
-
+addcmd ( "predictall","", PredictAll )
+addcmd ( "predict", "", PredictPlayer )
 -- // commands
 
 Notification ("Use cmds to view the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
-Notification ("Making a new ui for it soon, use F9 to see the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size16)
+Notification ("Making a new ui for it soon, use F9 to see the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
 
 local function CreateInstance(cls,props)
     local inst = Instance.new(cls)
