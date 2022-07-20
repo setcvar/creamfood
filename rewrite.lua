@@ -1009,9 +1009,9 @@ end
     follow(character.HumanoidRootPart.Position)
 end
 
-getgenv().predictedTime = 0.3
+getgenv().predictedTime = 3 / 10
 local function SetPredictTime (time)
-    getgenv().predictedTime = tonumber (time)
+    getgenv().predictedTime = tonumber (time) / 10
 end
 
 local function LinearPrediction (instance)
@@ -1042,9 +1042,7 @@ local function PredictAll ()
     end
 end
 
-
 -- // commands
-
 addcmd ( "print", "p", _print )
 addcmd ( "speed", "ws" , walkspeed )
 addcmd ( "jumppower", "jp",  jumppower)
