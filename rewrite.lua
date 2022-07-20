@@ -1009,9 +1009,9 @@ end
     follow(character.HumanoidRootPart.Position)
 end
 
-getgenv().predictedTime = 3 / 10
+getgenv().predictedTime = 0.3
 local function SetPredictTime (time)
-    getgenv().predictedTime = tonumber (time) / 10
+    getgenv().predictedTime = tonumber (time)
 end
 
 local function LinearPrediction (instance)
