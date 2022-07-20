@@ -40,9 +40,10 @@ local function ICommand (command)
     table.remove(list,1)
 
     local arguments = table.concat(list, " ")
+    print(arguments)
 
-    local f = coroutine.wrap(function() commands[cmd](arguments) end)
-    local success, errMessage = pcall( f )
+    --local f = coroutine.wrap(function() commands[cmd](arguments) end)
+    local success, errMessage = pcall( coroutine.wrap (function() commands[cmd](arguments) end) )
     if success then return end
     if errMessage then
         Notification ("Oops, something is not right. Error message: " .. tostring (errMessage), Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
@@ -1008,36 +1009,39 @@ end
     follow(character.HumanoidRootPart.Position)
 end
 
-local function PredictPlayer (player) -- Linear
-    local user = GetPlayer (player)
-    local character = user.Character
-    local torso = character.HumanoidRootPart
-    game:GetService("RunService").Stepped:Connect(function()
-        for i,v in pairs (character:GetChildren()) do
-            if v:IsA("BasePart") and v.Name == "HumanoidRootPart" and v:GetAttribute("h") then v:Destroy() end
-        end
-        local currentVelocity = character.HumanoidRootPart.AssemblyLinearVelocity
-        local currentPosition = character.HumanoidRootPart.Position
-        local predictedPosition = currentPosition + currentVelocity * 0.3
+getgenv().predictedTime = 0.3
+local function SetPredictTime (time)
+    getgenv().predictedTime = tonumber (time)
+end
 
-        local part = Instance.new("Part")
-        part.CanCollide = false
-        part.Anchored = true
-        part.Size = Vector3.new(1,1,1)
-        part.Parent = user.Character
-        part.Position = predictedPosition
-        part.Name = "HumanoidRootPart"
-        part:SetAttribute("h", 1)
-    end)
+local function LinearPrediction (instance)
+    local part = Instance.new ("Part")
+    part.CanCollide = false
+    part.Anchored = true
+    part.Size = Vector3.new(1,1,1)
+    part.Parent = instance
+
+
+    coroutine.wrap(function()
+        game:GetService("RunService").Stepped:Connect(function()
+            local currentPosition = instance.Position
+            local currentVelocity = instance.AssemblyLinearVelocity
+            local currentOrientation = instance.Orientation
+            local predictedPosition = currentPosition + currentVelocity * getgenv().predictedTime
+            part.Position = predictedPosition
+            part.Orientation = currentOrientation
+        end)
+    end)()
 end
 
 local function PredictAll ()
     for index, value in pairs (game.Players:GetPlayers()) do
         if value.Name ~= game.Players.LocalPlayer.Name then
-            PredictPlayer(value.Name)
+            LinearPrediction(value.Character.HumanoidRootPart)
         end
     end
 end
+
 
 -- // commands
 
@@ -1125,7 +1129,8 @@ addcmd ( "loadwaypoints", "loadwp", LoadWaypoints )
 addcmd ( "printwaypoints", "printwp", printwaypoints )
 addcmd ( "pfgoto", "", PFGotoPlayer )
 addcmd ( "predictall","", PredictAll )
-addcmd ( "predict", "", PredictPlayer )
+addcmd ( "predict", "", LinearPrediction )
+addcmd ( "setpredicttime", "", SetPredictTime )
 -- // commands
 
 Notification ("Use cmds to view the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
