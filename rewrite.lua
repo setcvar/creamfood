@@ -236,7 +236,7 @@ end
 local function save_chatlogs ( )
     if writefile then writefile ( "creamfood_chatlogs.txt",  table.concat(getgenv().chatlog_messages, "\n"))
     else
-        Notification ("Oops! Something gone wrong")
+        Notification ("Oops! Something gone wrong", Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
     end
 end
 
@@ -1041,7 +1041,6 @@ local function PredictAll ()
         end
     end
 end
-
 -- // commands
 addcmd ( "print", "p", _print )
 addcmd ( "speed", "ws" , walkspeed )
@@ -1132,7 +1131,7 @@ addcmd ( "setpredicttime", "", SetPredictTime )
 -- // commands
 
 Notification ("Use cmds to view the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
-Notification ("Making a new ui for it soon, use F9 to see the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
+Notification ("Making a new ui for it soon", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
 
 local function CreateInstance(cls,props)
     local inst = Instance.new(cls)
@@ -1142,7 +1141,7 @@ local function CreateInstance(cls,props)
     return inst
 end
         
-local ScreenGui = CreateInstance('ScreenGui',{DisplayOrder=0,Enabled=true,ResetOnSpawn=true,Name='ScreenGui', Parent=gethui() or game.CoreGui})
+local ScreenGui = CreateInstance('ScreenGui',{DisplayOrder=0,Enabled=true,ResetOnSpawn=true,Name='ScreenGui', Parent=game.CoreGui})
 local TextBox = CreateInstance('TextBox',{ClearTextOnFocus=true,Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size14,MultiLine=false,Text='',TextColor3=Color3.new(0, 0, 0), PlaceholderText='', PlaceholderColor3=Color3.new(0.7, 0.7, 0.7),TextScaled=false,TextSize=14,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=1,ClipsDescendants=false,Draggable=false,Position=UDim2.new(-0.00244425423, 0, 0.770705044, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 200, 0, 50),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='TextBox',Parent = ScreenGui})
 
 local function FocusLost (enter)
