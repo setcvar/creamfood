@@ -39,14 +39,12 @@ local function ICommand (command)
 
     table.remove(list,1)
 
-    local arguments = table.concat(list, " ")
-    print(arguments)
-
-    --local f = coroutine.wrap(function() commands[cmd](arguments) end)
+    local arguments = table.concat(list, " ")    
     local success, errMessage = pcall( coroutine.wrap (function() commands[cmd](arguments) end) )
     if success then return end
     if errMessage then
-        Notification ("Oops, something is not right. Error message: " .. tostring (errMessage), Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
+        Notification ("Oops, something is not right.")
+        Notification(tostring (errMessage), Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
         return
     end
     
@@ -145,16 +143,11 @@ local function clearevents ( )
     end
 end
 
-local function highgraphics ( )
-    local link = "https://raw.githubusercontent.com/GTX1O8OTi/Graphics/experimental/new.lua"
-    --loadstring(game:HttpGet("https://raw.githubusercontent.com/GTX1O8OTi/Graphics/experimental/new.lua", true))()
-    local r = request ( {
-        Url = link,
-        Method = "GET"
-    } )
+local function highgraphics (folder)
+    getgenv().environment = true
+    getgenv().FutureLighting = true
 
-    if not request then loadstring ( game:HttpGet (link) )(); return end
-    loadstring ( r.Body ) ( )
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/GTX1O8OTi/Graphics/main/"..folder.."/script.lua"))()
 end
 
 local function noclip ( )
@@ -956,59 +949,6 @@ local function LoadWaypoints ( )
 
 end
 
-local function PFGotoPlayer (player) -- thx roblox wiki / obg roblox wiki
-local Pathfinding = game:GetService("PathfindingService")
-
-local _player = GetPlayer(player)
-local character = _player.Character
-local humanoid = game.Players.LocalPlayer.Character:WaitForChild("Humanoid")
-
-local path = Pathfinding:CreatePath({
-    AgentRadius = 0.5,
-    AgentHeight = 6,
-    AgentCanJump = true,
-})
-
-local waypoints
-local nextWaypointIndex
-local reachedConnection
-local blockedConnection
-
-local function follow(dest)
-    local success, err = pcall(function()
-        path:ComputeAsync(game.Players.LocalPlayer.Character.HumanoidRootPart.Position, dest)
-    end)
-
-    if success and path.Status == Enum.PathStatus.Success then
-        waypoints = path:GetWaypoints()
-
-        blockedConnection = path.Blocked:Connect(function(blockedWaypointIndex)
-            if blockedWaypointIndex >= nextWaypointIndex then
-                blockedConnection:Disconnect()
-                follow(dest)
-            end
-        end)
-
-        if not reachedConnection then
-            reachedConnection = humanoid.MoveToFinished:Connect(function(reached)
-                if reached and nextWaypointIndex < #waypoints then
-                    nextWaypointIndex += 1
-                    humanoid:MoveTo(waypoints[nextWaypointIndex].Position)
-                else
-                    reachedConnection:Disconnect()
-					blockedConnection:Disconnect()
-                end
-            end)
-        end
-
-        nextWaypointIndex = 2
-        humanoid:MoveTo(waypoints[nextWaypointIndex].Position)
-    end
-end
-
-    follow(character.HumanoidRootPart.Position)
-end
-
 getgenv().predictedTime = 0.3
 local function SetPredictTime (time)
     getgenv().predictedTime = tonumber (time)
@@ -1020,7 +960,6 @@ local function LinearPrediction (instance)
     part.Anchored = true
     part.Size = Vector3.new(1,1,1)
     part.Parent = instance
-
 
     coroutine.wrap(function()
         game:GetService("RunService").Stepped:Connect(function()
@@ -1041,6 +980,106 @@ local function PredictAll ()
         end
     end
 end
+
+local function PFGoto (instance)
+    local Pathfinding = game:GetService("PathfindingService")
+
+    local player = game.Players.LocalPlayer
+    local humanoid = player.Character:FindFirstChild ("Humanoid")
+
+    local path = Pathfinding:CreatePath ({
+        AgentRadius = 0.5,
+        AgentHeight = 2,
+        AgentCanJump = true,
+    })
+
+    local waypoints, nextWaypointIndex, reachedConnection, blockedConnection
+
+    local function Follow (dest)
+        local success, err = pcall (function ()
+            path:ComputeAsync (player.Character.HumanoidRootPart.Position, dest)
+        end)
+
+        if success and path.Status == Enum.PathStatus.Success then
+            waypoints = path:GetWaypoints()
+
+            blockedConnection = path.Blocked:Connect (function (blockedWaypointIndex)
+                if blockedWaypointIndex >= nextWaypointIndex then
+                    blockedConnection:Disconnect()
+                    follow (dest)
+                end
+            end)
+
+            if not reachedConnection then
+                reachedConnection = humanoid.MoveToFinished:Connect (function (reached)
+                    if reached and nextWaypointIndex < #waypoints then
+                        nextWaypointIndex += 1
+                        humanoid:MoveTo (waypoints [nextWaypointIndex].Position)
+                    else
+                        reachedConnection:Disconnect()
+                        blockedConnection:Disconnect()
+                    end
+                end)
+            end
+
+            nextWaypointIndex = 2
+            humanoid:MoveTo (waypoints [nextWaypointIndex].Position)
+        end
+    end
+
+    Follow(instance)
+end
+
+function Bot()
+
+    if table.find ( events, "bot" ) then return end
+    local players = game.Players:GetPlayers ()
+    local player = players[math.random (1,#players)]
+
+    function randomPlayer ()
+        player = players[math.random (1,#players)]
+
+        if player.Team ~= game.Players.LocalPlayer.Team then
+            randomPlayer()
+        end
+
+        return
+    end
+
+    table.insert ( events, "bot" )
+    
+    getgenv ().bot = game:GetService ("RunService").RenderStepped:Connect (function ()
+        if player and player.Character then
+            if game.Players.LocalPlayer.Character.Humanoid.MoveDirection.Magnitude > 0 then
+                -- do nothing
+            else
+                -- not moving
+                PFGoto ( player.Character.HumanoidRootPart.Position )
+                if player.Character.Humanoid.Health == 0 then
+                    randomPlayer()
+                    PFGoto()
+                end
+
+            end
+        else
+            randomPlayer()
+        end
+    end)
+end
+
+local function stopBot()
+    if table.find ( events, "bot" ) and getgenv().bot then
+        getgenv().bot:Disconnect()
+    end
+end
+
+local function pffindgoto (name)
+    local player = GetPlayer (name)
+    if player and player.Character then
+        PFGoto (player.Character.HumanoidRootPart.CFrame)
+    end
+end
+
 -- // commands
 addcmd ( "print", "p", _print )
 addcmd ( "speed", "ws" , walkspeed )
@@ -1124,14 +1163,17 @@ addcmd ( "yesgui", "restoregui", yesgui )
 addcmd ( "savewaypoints", "savewp", SaveWaypoints )
 addcmd ( "loadwaypoints", "loadwp", LoadWaypoints )
 addcmd ( "printwaypoints", "printwp", printwaypoints )
-addcmd ( "pfgoto", "", PFGotoPlayer )
 addcmd ( "predictall","", PredictAll )
 addcmd ( "predict", "", LinearPrediction )
 addcmd ( "setpredicttime", "", SetPredictTime )
+addcmd ( "advertise","", Advertise )
+addcmd ( "walkbot","", Bot )
+addcmd ( "pgoto", "", pffindgoto )
+addcmd ( "stopbot","", stopBot )
 -- // commands
 
 Notification ("Use cmds to view the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
-Notification ("Making a new ui for it soon", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
+Notification ("Making a new ui for it soon, use F9 to see the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
 
 local function CreateInstance(cls,props)
     local inst = Instance.new(cls)
