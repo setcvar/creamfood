@@ -1228,62 +1228,6 @@ end
 local ScreenGui = CreateInstance('ScreenGui',{DisplayOrder=0,Enabled=true,ResetOnSpawn=true,Name='ScreenGui', Parent=game.CoreGui})
 local TextBox = CreateInstance('TextBox',{ClearTextOnFocus=true,Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size14,MultiLine=false,Text='',TextColor3=Color3.new(0, 0, 0), PlaceholderText='', PlaceholderColor3=Color3.new(0.7, 0.7, 0.7),TextScaled=false,TextSize=14,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=1,ClipsDescendants=false,Draggable=false,Position=UDim2.new(-0.00244425423, 0, 0.770705044, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 200, 0, 50),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='TextBox',Parent = ScreenGui})
 
---[[local function CreateText (text, position, size, color, parent)
-    local TextLabel = Instance.new ("TextLabel")
-    TextLabel.Parent = parent
-    TextLabel.Text = text
-    TextLabel.Position = position
-    TextLabel.Size = size
-    TextLabel.TextColor3 = color
-    TextLabel.BackgroundTransparency = 1
-    TextLabel.TextScaled = true
-    return TextLabel
-end
-
-local ScreenGui = Instance.new ("ScreenGui")
-ScreenGui.Parent = gethui() or game.CoreGui
-
-local Frame = Instance.new ("Frame")
-Frame.Parent = ScreenGui
-Frame.BackgroundColor3 = Color3.fromRGB(35,35,35)
-Frame.BackgroundTransparency = 0.015
-Frame.BorderSizePixel = 0
-Frame.Position = UDim2.new (0.009,0, 0.627,0)
-Frame.Size = UDim2.new (0,145,0,217)
-Frame.Selectable = true
-Frame.Draggable = true
-Frame.Active = true
-
-local Frame2 = Instance.new ("Frame")
-Frame2.Parent = Frame
-Frame2.BackgroundColor3 = Color3.fromRGB(98, 220, 184)
-Frame2.BorderSizePixel = 0
-Frame2.Position = UDim2.new (0,0, 0,0)
-Frame2.Size = UDim2.new (0,145,0,8)
-
-local player = game.Players.LocalPlayer
-local humanoid = player.Character.Humanoid
-local Jump = CreateText ("", UDim2.new(0.045, 0,0.301, 0), UDim2.new(0, 130,0, 29), Color3.fromRGB(255,255,255), Frame)
-Jump.Text = "JumpPower: "..humanoid.JumpPower
-local Grav = CreateText ( "", UDim2.new (0.045, 0,0.435,0), UDim2.new (0, 130,0,29), Color3.fromRGB(255,255,255), Frame )
-Grav.Text = "Gravity: " .. workspace.Gravity
-local Position = CreateText ( "", UDim2.new (0.045,0, 0.569,0), UDim2.new (0,130,0,29), Color3.fromRGB(255,255,255), Frame )
-Position.Text = "Position: "..tostring(player.Character.HumanoidRootPart.Position)
-local Time = CreateText ( "Time: ", UDim2.new (0.045,0,0.702,0),UDim2.new(0,130,0,29), Color3.fromRGB(255,255,255), Frame )
-Time.Text = "Time: "..game.Lighting.ClockTime
-local Speed = CreateText ( "Speed: ", UDim2.new (0.045,0,0.034,0),UDim2.new(0,130,0,29), Color3.fromRGB(255,255,255), Frame )
-Speed.Text = "Speed: "..humanoid.WalkSpeed
-local Health = CreateText ( "Health: ", UDim2.new (0.045,0,0.168,0),UDim2.new(0,130,0,29),Color3.fromRGB(255,255,255), Frame )
-Health.Text = "Health: "..humanoid.Health
-local MoveDir = CreateText ( "Move Direction: ", UDim2.new(0.045,0,0.836,0), UDim2.new(0,130,0,29), Color3.fromRGB(255,255,255), Frame )
-humanoid:GetPropertyChangedSignal("JumpPower"):Connect(function()
-    Jump.Text = "JumpPower: " .. player.Character.Humanoid.JumpPower
-end)
-
-workspace:GetPropertyChangedSignal("Gravity"):Connect(function()
-    Grav.Text = "Gravity: " .. workspace.Gravity
-end)
-]]
 local function FocusLost (enter)
     if enter then
         ICommand (TextBox.Text)
