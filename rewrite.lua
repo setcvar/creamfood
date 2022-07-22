@@ -1206,7 +1206,7 @@ addcmd ( "addplugin", "", addplugin )
 addcmd ( "removeplugin", "", removeplugin )
 -- // commands
 
-local country = game:GetService(“LocalizationService”).RobloxLocaleId
+local country = game:GetService("LocalizationService").RobloxLocaleId
 
 if country == "en-us" then
     Notification ("Use 'cmds' to view the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
@@ -1217,16 +1217,41 @@ elseif country == "pt-br" then
 end
 
 
-local function CreateInstance(cls,props)
+--[[local function CreateInstance(cls,props)
     local inst = Instance.new(cls)
     for i,v in pairs(props) do
         inst[i] = v
     end
     return inst
 end
-        
-local ScreenGui = CreateInstance('ScreenGui',{DisplayOrder=0,Enabled=true,ResetOnSpawn=true,Name='ScreenGui', Parent=game.CoreGui})
-local TextBox = CreateInstance('TextBox',{ClearTextOnFocus=true,Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size14,MultiLine=false,Text='',TextColor3=Color3.new(0, 0, 0), PlaceholderText='', PlaceholderColor3=Color3.new(0.7, 0.7, 0.7),TextScaled=false,TextSize=14,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=1,ClipsDescendants=false,Draggable=false,Position=UDim2.new(-0.00244425423, 0, 0.770705044, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 200, 0, 50),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='TextBox',Parent = ScreenGui})
+]]
+--local ScreenGui = CreateInstance('ScreenGui',{DisplayOrder=0,Enabled=true,ResetOnSpawn=true,Name='ScreenGui', Parent=game.CoreGui})
+--local TextBox = CreateInstance('TextBox',{ClearTextOnFocus=true,Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size14,MultiLine=false,Text='',TextColor3=Color3.new(0, 0, 0), PlaceholderText='', PlaceholderColor3=Color3.new(0.7, 0.7, 0.7),TextScaled=false,TextSize=14,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=1,ClipsDescendants=false,Draggable=false,Position=UDim2.new(-0.00244425423, 0, 0.770705044, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 200, 0, 50),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='TextBox',Parent = ScreenGui})
+
+local ScreenGui = Instance.new ("ScreenGui")
+ScreenGui.Parent = gethui() or game.CoreGui
+
+local Frame = Instance.new ("Frame")
+Frame.Parent = ScreenGui
+Frame.BackgroundColor3 = Color3.fromRGB (98, 220, 184)
+Frame.BorderSizePixel = 0
+Frame.Size = UDim2.new (0.295,0,0,35)
+Frame.Position = UDim2.new (0.35, 0--[[ScreenGui.AbsoluteSize.X/3]], 0.844, 0) -- 1920 / 3.5 achar soluçao melhor depois
+
+local TextBox = Instance.new("TextBox")
+TextBox.Parent = Frame
+TextBox.BackgroundColor3 = Color3.fromRGB(30,30,30)
+TextBox.BorderSizePixel = 0
+TextBox.Position = UDim2.new (0,0,0,0)
+TextBox.Size = UDim2.new (1,0, 0, 33)
+TextBox.PlaceholderText = "cmds"
+TextBox.TextColor3 = Color3.fromRGB (255,255,255)
+TextBox.Text = ""
+
+ScreenGui:GetPropertyChangedSignal ("AbsoluteSize"):Connect (function()
+    Frame.Position = UDim2.new ( 0.35, 0, 0.844,0 )
+    Frame.Size = UDim2.new (0.295,0,0,35)
+end)
 
 local function FocusLost (enter)
     if enter then
