@@ -1,13 +1,19 @@
-Contact me if you need help with the script or to report a bug: navet#2416
-
-![image](https://user-images.githubusercontent.com/83888350/130711425-fd5e4cb4-1f96-44ea-b59d-f1507f7870a1.png)
-
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/GTX1O8OTi/creamfood/main/script.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/GTX1O8OTi/creamfood/main/main")) ()
 ```
 
-Press "[" to focus the textbox
+Example of plugin:
+```lua
+local Plugin = {
+    Name = "test",
+    Alias = "",
+    Commands = {
+        ["test1"] = function(text)
+            local player = GetPlayer (text)
+            print(player.Name)
+        end,
+    },
+}
 
-Press Home to toggle the gui
-
-Obrigado ao Remfly! :D
+return Plugin
+```
