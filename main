@@ -30,11 +30,11 @@ local function ICommand (command)
     end
     
     local cmd = list[1]
-    if not cmd == commands[cmd] then
+
+    if not commands[cmd] then
         for index, value in pairs (alias) do
             if index == cmd then
                 cmd = value
-                return
             end
         end
     end
@@ -1150,7 +1150,7 @@ addcmd ( "colorful_world", "", colorful_world )
 addcmd ( "drugs", "", drugs )
 addcmd ( "chatlog", "clog", chatlog_everyone )
 addcmd ( "savechatlog", "saveclog", save_chatlogs )
-addcmd ( "goto", "", _goto )
+addcmd ( "goto", "to", _goto )
 addcmd ( "freeze", "stuck", Freeze )
 addcmd ( "thaw", "unstuck", _Thaw )
 addcmd ( "hitbox", "hbox", Hitbox )
