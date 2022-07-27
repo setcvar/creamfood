@@ -1,3 +1,5 @@
+setthreadcontext(7)
+
 local commands = {}
 local alias = {}
 local events = {}
@@ -39,6 +41,8 @@ local function ICommand (command)
         end
     end
     
+    if not cmd then return end
+
     table.remove(list,1)
 
     local arguments = table.concat(list, " ")    
@@ -67,18 +71,17 @@ function GetPlayer(Name)
 end
 
 function findcommand(cmd_name)
-    for i,v in pairs (commands) do
-        if tostring(i) == tostring(cmd_name) then
-            print("true "..i)
-            return true
-
-        else
-            for index, value in pairs (alias) do
-                --if value = i
-            end
+    for index, value in pairs ( commands ) do
+        if index == cmd_name then
+            return index
         end
     end
-    return false
+
+    for index, value in pairs (alias) do
+        if index == cmd_name then
+            return index
+        end
+    end
 end
 
 function FindPlayer ( PLAYERNAME )
@@ -177,10 +180,10 @@ local function sit ( )
 end
 
 local function colorful_world ( )
-    math.randomseed ( game.Players.LocalPlayer.UserId + (100 / 2 * 6 + 2 - 1) + (math.random ( 0, math.random ( 0, 49604212 ) ) * 0.5 ) - 6 )
+    local rand = Random.new ( game.Players.LocalPlayer.UserId + (100 / 2 * 6 + 2 - 1) + (math.random ( 0, math.random ( 0, 49604212 ) ) * 0.5 ) - 6 )
     for index, value in pairs ( workspace:GetDescendants() ) do
         if value:IsA ( "BasePart" ) or value:IsA ( "Part" ) then
-            value.Color3 = Color3.fromRGB ( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 ) )
+            value.Color3 = Color3.fromRGB ( rand:NextNumber (0, 255), rand:NextNumber (0, 255), rand:NextNumber (0, 255) )
         end
     end
 end
@@ -210,14 +213,63 @@ local function drugs ( )
     end)
 end
 
+
+--[[
+local lastMessage
+local function CreateChatLogMessage ( message, parent )
+    local label = Instance.new ("TextLabel")
+    label.Parent = parent
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new (0,329,0,30)
+    label.TextColor3 = Color3.fromRGB(255,255,255)
+    label.TextWrapped = true
+    label.Text = message
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    if lastMessage then
+        label.Position = lastMessage.Position + UDim2.new(0,0,0,20)
+        lastMessage = label
+        return label
+    else
+        label.Position = UDim2.new (0,0,0,0)
+        lastMessage = label
+        return label
+    end
+end
+
+local CHATLOG_ScreenGui = Instance.new ("ScreenGui")
+CHATLOG_ScreenGui.Parent = gethui() or game.CoreGui
+CHATLOG_ScreenGui.Enabled = false
+
+local CHATLOG_Frame = Instance.new ("Frame")
+CHATLOG_Frame.Parent = CHATLOG_ScreenGui
+CHATLOG_Frame.BackgroundColor3 = Color3.fromRGB (98, 220, 184)
+CHATLOG_Frame.BorderSizePixel = 0
+CHATLOG_Frame.Size = UDim2.new (0, 341,0, 299)
+CHATLOG_Frame.Position = UDim2.new (0.237, 0,0.34, 0)
+
+local CHATLOG_SFrame = Instance.new ("ScrollingFrame")
+CHATLOG_SFrame.Parent = CHATLOG_Frame
+CHATLOG_SFrame.BackgroundColor3 = Color3.fromRGB (30,30,30)
+CHATLOG_SFrame.BorderSizePixel = 0
+CHATLOG_SFrame.Size = UDim2.new (0, 341,0, 291)
+CHATLOG_SFrame.Position = UDim2.new (0,0,0,0)
+CHATLOG_SFrame.ScrollBarImageColor3 = Color3.fromRGB(255,255,255)
+CHATLOG_SFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+]]
 local function chatlog ( player )
+
+    --[[
+    CHATLOG_ScreenGui.Enabled = true
     player.Chatted:Connect( function ( message )
         getgenv().chatlog_messages = {}
         table.insert( chatlog_messages, player.Name .. " - " .. message )
-    end)
+        CreateChatLogMessage ( "[" .. player.Name .. "]: " .. message, CHATLOG_SFrame )
+    end)]]
+    Notification ("player.Chatted is not working", Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
 end
 
 local function chatlog_everyone ( )
+    
     for index, value in pairs (game.Players:GetPlayers()) do
         chatlog ( value )
     end
@@ -248,7 +300,7 @@ end
 local function Freeze ( name )
 
     local function Freeze ( instance )
-        if instance:IsA("BasePart") and value.Anchored == false then
+        if instance:IsA("BasePart") and instance.Anchored == false then
             instance.Anchored = true
         end
     end
@@ -291,7 +343,7 @@ end
 local function Thaw ( name )
 
     local function Thaw ( instance )
-        if instance:IsA("BasePart") and value.Anchored == true then
+        if instance:IsA("BasePart") and instance.Anchored == true then
             instance.Anchored = false
         end
     end
@@ -332,14 +384,14 @@ local function Hitbox ( )
         SelectionBox.LineThickness = 0.015
         SelectionBox.Adornee = value
     
-    elseif value:IsA ( "BasePart" ) and value.Transparency > 0 or value:IsA ( "Part" ) and value.Transparency > 0 then
-        local SelectionBox = Instance.new ( "SelectionBox" )
-        SelectionBox.Parent = value
-        SelectionBox.Color3 = Color3.fromRGB ( 255, 201, 252 )
-        SelectionBox.LineThickness = 0.015
-        SelectionBox.Adornee = value
+        elseif value:IsA ( "BasePart" ) and value.Transparency > 0 or value:IsA ( "Part" ) and value.Transparency > 0 then
+            local SelectionBox = Instance.new ( "SelectionBox" )
+            SelectionBox.Parent = value
+            SelectionBox.Color3 = Color3.fromRGB ( 255, 201, 252 )
+            SelectionBox.LineThickness = 0.015
+            SelectionBox.Adornee = value
+        end
     end
-end
 end
 
 local function PotatoMode ( )
@@ -970,19 +1022,20 @@ local function SetPredictTime (time)
     getgenv().predictedTime = tonumber (time)
 end
 
-local function LinearPrediction (instance)
+function LinearPrediction (instance)
+    local Pathfinding = game:GetService("PathfindingService")
     local part = Instance.new ("Part")
     part.CanCollide = false
     part.Anchored = true
     part.Size = Vector3.new(1,1,1)
     part.Parent = instance
-
     coroutine.wrap(function()
-        game:GetService("RunService").Stepped:Connect(function()
+        game:GetService("RunService").Stepped:Connect(function(t, delta)
             local currentPosition = instance.Position
             local currentVelocity = instance.AssemblyLinearVelocity
             local currentOrientation = instance.Orientation
-            local predictedPosition = currentPosition + currentVelocity * getgenv().predictedTime
+            local predictedPosition = currentPosition + currentVelocity * delta *workspace.Gravity * getgenv().predictedTime
+            
             part.Position = predictedPosition
             part.Orientation = currentOrientation
         end)
@@ -991,11 +1044,12 @@ end
 
 local function PredictAll ()
     for index, value in pairs (game.Players:GetPlayers()) do
-        if value.Name ~= game.Players.LocalPlayer.Name then
+        --if value.Name ~= game.Players.LocalPlayer.Name then
             LinearPrediction(value.Character.HumanoidRootPart)
-        end
+        --end
     end
 end
+
 
 local function PFGoto (instance)
     local Pathfinding = game:GetService("PathfindingService")
@@ -1122,14 +1176,39 @@ end
 
 local function removeplugin (name)
     if table.find ( plugins, name ) then
-        table.remove (plugins, table.find (plugins, name))
         local plugin = loadfile(name)()
-        for index, value in pairs (plugin.Commands) do
-            removecmd (index)
+        if plugin then
+            table.remove (plugins, table.find (plugins, name))
+            for index, value in pairs (plugin.Commands) do
+                removecmd ( index )
+            end
         end
     else
-        Notification ("Couldn't find plugin! Did you put the right name?", Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
+        Notification ("Couldn't find plugin!", Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
     end
+end
+
+local function PrintAlias()
+    for index, value in pairs (alias) do
+        print(index)
+    end
+end
+
+local function PrintPlugins ()
+    for index, value in pairs (plugins) do
+        print(index)
+    end
+end
+
+function closestplayer()
+    local closest
+    for index, value in pairs ( game.Players:GetPlayers() ) do
+        if value.Character.HumanoidRootPart.Position.Magnitude <= closest.Character.HumanoidRootPart.Position.Magnitude then
+            closest = value
+        end
+    end
+
+    return closest
 end
 
 -- // commands
@@ -1152,7 +1231,7 @@ addcmd ( "chatlog", "clog", chatlog_everyone )
 addcmd ( "savechatlog", "saveclog", save_chatlogs )
 addcmd ( "goto", "to", _goto )
 addcmd ( "freeze", "stuck", Freeze )
-addcmd ( "thaw", "unstuck", _Thaw )
+addcmd ( "thaw", "unstuck", Thaw )
 addcmd ( "hitbox", "hbox", Hitbox )
 addcmd ( "potato", "ptt", PotatoMode )
 addcmd ( "extremepotato", "eptt", ExtremePotatoMode )
@@ -1197,10 +1276,9 @@ addcmd ("filescript", "runfile", filescript )
 addcmd ( "persistafterteleport", "persisttp", persistafterteleport )
 addcmd ( "simradius", "", simradius )
 addcmd ( "unsimradius", "", unsimradius )
-addcmd ( "movedir", "", movedirection )
+addcmd ( "movedir", "", movedir )
 addcmd ( "makewaypoint", "mkwp", MakeWaypoint )
 addcmd ( "deletewaypoint", "delwp", DeleteWaypoints )
-addcmd ( "renamewaypoint", "renamewp", RenameWaypoints )
 addcmd ( "gotowaypoint", "gotowp", GotoWaypoint )
 addcmd ( "clearwaypoints", "clearwp", ClearWaypoints )
 addcmd ( "walktowaypoint", "walktowp", WalkToWaypoint )
@@ -1218,36 +1296,24 @@ addcmd ( "printwaypoints", "printwp", printwaypoints )
 addcmd ( "predictall","", PredictAll )
 addcmd ( "predict", "", LinearPrediction )
 addcmd ( "setpredicttime", "", SetPredictTime )
-addcmd ( "advertise","", Advertise )
 addcmd ( "walkbot","", Bot )
 addcmd ( "pgoto", "", pffindgoto )
 addcmd ( "stopbot","", stopBot )
 addcmd ( "removecmd", "", removecmd )
-addcmd ( "addplugin", "", addplugin )
-addcmd ( "removeplugin", "", removeplugin )
+addcmd ( "addplugin", "plugin", addplugin )
+addcmd ( "removeplugin", "removep", removeplugin )
+addcmd ( "printalias", "", PrintAlias )
 -- // commands
 
 local country = game:GetService("LocalizationService").RobloxLocaleId
 
 if country == "en-us" then
     Notification ("Use 'cmds' to view the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
-    Notification ("Making a new ui for it soon, use F9 to see the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
+    Notification ("Making a new ui for it soon, use F9 to see the commands", Color3.fromRGB(255,255,255), Enum.FontSize.Size18)
 elseif country == "pt-br" then
     Notification ("Use 'cmds' para ver os comandos", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
-    Notification ( "Fazendo uma nova ui em breve, use F9 para ver os comandos" )
+    Notification ( "Fazendo uma nova ui em breve, use F9 para ver os comandos", Color3.fromRGB(255,255,255), Enum.FontSize.Size18 )
 end
-
-
---[[local function CreateInstance(cls,props)
-    local inst = Instance.new(cls)
-    for i,v in pairs(props) do
-        inst[i] = v
-    end
-    return inst
-end
-]]
---local ScreenGui = CreateInstance('ScreenGui',{DisplayOrder=0,Enabled=true,ResetOnSpawn=true,Name='ScreenGui', Parent=game.CoreGui})
---local TextBox = CreateInstance('TextBox',{ClearTextOnFocus=true,Font=Enum.Font.SourceSans,FontSize=Enum.FontSize.Size14,MultiLine=false,Text='',TextColor3=Color3.new(0, 0, 0), PlaceholderText='', PlaceholderColor3=Color3.new(0.7, 0.7, 0.7),TextScaled=false,TextSize=14,TextStrokeColor3=Color3.new(0, 0, 0),TextStrokeTransparency=1,TextTransparency=0,TextWrapped=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,Active=true,AnchorPoint=Vector2.new(0, 0),BackgroundColor3=Color3.new(1, 1, 1),BackgroundTransparency=0,BorderColor3=Color3.new(0.105882, 0.164706, 0.207843),BorderSizePixel=1,ClipsDescendants=false,Draggable=false,Position=UDim2.new(-0.00244425423, 0, 0.770705044, 0),Rotation=0,Selectable=true,Size=UDim2.new(0, 200, 0, 50),SizeConstraint=Enum.SizeConstraint.RelativeXY,Visible=true,ZIndex=1,Name='TextBox',Parent = ScreenGui})
 
 local ScreenGui = Instance.new ("ScreenGui")
 ScreenGui.Parent = gethui() or game.CoreGui
