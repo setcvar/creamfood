@@ -270,9 +270,9 @@ end
 
 local function chatlog_everyone ( )
     
-    for index, value in pairs (game.Players:GetPlayers()) do
+    --for index, value in pairs (game.Players:GetPlayers()) do
         chatlog ( value )
-    end
+    --end
 end
 
 local function save_chatlogs ( )
@@ -519,13 +519,18 @@ end
 
 local function InfJump ( )
 	getgenv().infinite_jump = game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessedEvent)
-		if input == Enum.KeyCode.Space and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid:ChangeState( Enum.HumanoidStateType.Jumping ) end
+		if input == Enum.KeyCode.Space and not gameProcessedEvent then
+            game.Players.LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
 	end)
 	table.insert ( events, "infinite_jump" )
 end
 
 local function NoInfJump ( )
-	if table.find ( events, "infinite_jump" ) then getgenv().infinite_jump:Disconnect(); table.remove ( events, table.find( events, "infinite_jump" ) ) end
+	if table.find ( events, "infinite_jump" ) then
+        getgenv().infinite_jump:Disconnect()
+        table.remove ( events, table.find( events, "infinite_jump" ) )
+    end
 end
 
 local function NoSit ( )
@@ -1175,14 +1180,16 @@ local function addplugin (name)
 end
 
 local function removeplugin (name)
-    if table.find ( plugins, name ) then
-        local plugin = loadfile(name)()
-        if plugin then
-            table.remove (plugins, table.find (plugins, name))
-            for index, value in pairs (plugin.Commands) do
-                removecmd ( index )
-            end
+    if not loadfile then Notification ("Your exploit doesn't have loadfile", Color3.fromRGB(200,0,0), Enum.FontSize.Size18) return end
+    local plugin = loadfile(name)()
+    if plugin then
+        table.remove ( plugins, table.find ( plugins, plugin.Name ) )
+
+        for index,value in pairs (plugin.Commands) do
+            table.remove ( commands, table.find ( commands, index ) )
         end
+
+        Notification (plugin.Name .. " unloaded successfully", Color3.fromRGB(100,200,100), Enum.FontSize.Size18)
     else
         Notification ("Couldn't find plugin!", Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
     end
@@ -1196,7 +1203,7 @@ end
 
 local function PrintPlugins ()
     for index, value in pairs (plugins) do
-        print(index)
+        print(value)
     end
 end
 
@@ -1303,6 +1310,7 @@ addcmd ( "removecmd", "", removecmd )
 addcmd ( "addplugin", "plugin", addplugin )
 addcmd ( "removeplugin", "removep", removeplugin )
 addcmd ( "printalias", "", PrintAlias )
+addcmd ( "printplugins", "", PrintPlugins )
 -- // commands
 
 local country = game:GetService("LocalizationService").RobloxLocaleId
