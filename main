@@ -41,7 +41,7 @@ local function FindPlayer (Name)
     end
 
     for index, value in pairs (PLAYERS:GetPlayers()) do
-        if string.lower (value.Name):match("^" .. string.lower (Name)) then
+        if string.lower (value.Name):match("^" .. string.lower (tostring(Name))) then
             return value
         end
     end
@@ -313,8 +313,8 @@ local function save_chatlogs ( )
 end
 
 local function _goto ( _string )
-    if GetPlayer ( _string ) == game.Players.LocalPlayer then return end
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = GetPlayer ( _string ).Character.HumanoidRootPart.CFrame
+    if FindPlayer ( _string ) == game.Players.LocalPlayer then return end
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = FindPlayer ( _string ).Character.HumanoidRootPart.CFrame
 end
 
 local function rejoin ( )
@@ -325,84 +325,6 @@ local function rejoin ( )
     else
         game:GetService ( 'TeleportService' ):TeleportToPlaceInstance ( game.PlaceId, game.JobId, game.Players.LocalPlayer )
     end
-end
-
-local function Freeze ( name )
-
-    local function Freeze ( instance )
-        if instance:IsA("BasePart") and instance.Anchored == false then
-            instance.Anchored = true
-        end
-    end
-
-    if name == "all" then
-        for index, value in pairs (game.Players:GetPlayers()) do
-            for i,v in pairs (value.Character:GetChildren()) do
-                Freeze(v)
-            end
-        end
-        return
-    end
-
-    if name == "others" then
-        for index, value in pairs (game.Players:GetPlayers()) do
-            if value ~= game.Players.LocalPlayer then
-                for i,v in pairs (value.Character:GetChildren()) do
-                    Freeze (v)
-                end
-            end
-        end
-        return
-    end
-
-    local player = GetPlayer (name)
-    for index, value in pairs (player.Character:GetChildren()) do
-        Freeze (value)
-    end
-    
-end
-
-local function Thaw ( _string )
-    for index, value in pairs ( GetPlayer ( _string ).Character:GetDescendants ( ) ) do
-        if value:IsA ( "BasePart" ) and value.Anchored == true or value:IsA ( "Part" ) and value.Anchored == true then
-            value.Anchored = false
-        end
-    end
-end
-
-local function Thaw ( name )
-
-    local function Thaw ( instance )
-        if instance:IsA("BasePart") and instance.Anchored == true then
-            instance.Anchored = false
-        end
-    end
-
-    if name == "all" then
-        for index, value in pairs (game.Players:GetPlayers()) do
-            for i,v in pairs (value.Character:GetChildren()) do
-                Thaw(v)
-            end
-        end
-        return
-    end
-
-    if name == "others" then
-        for index, value in pairs (game.Players:GetPlayers()) do
-            if value ~= game.Players.LocalPlayer then
-                for i,v in pairs (value.Character:GetChildren()) do
-                    Thaw (v)
-                end
-            end
-        end
-        return
-    end
-
-    local player = GetPlayer (name)
-    for index, value in pairs (player.Character:GetChildren()) do
-        Thaw (value)
-    end
-    
 end
 
 local function Hitbox ( )
@@ -478,7 +400,7 @@ local function SetCreatorId ( )
 end
 
 local function View ( player )
-	if GetPlayer ( player ) then workspace.CurrentCamera.CameraSubject = GetPlayer ( player ).Character.Humanoid end
+	if FindPlayer ( player ) then workspace.CurrentCamera.CameraSubject = FindPlayer ( player ).Character.Humanoid end
 end
 
 local function Unview ( )
@@ -575,7 +497,7 @@ end
 
 local function WalkTo ( _string )
 	getgenv().walkto = game:GetService("RunService").RenderStepped:Connect (function()
-		game.Players.LocalPlayer.Character.Humanoid:MoveTo ( GetPlayer ( _string ).Character.HumanoidRootPart.Position )
+		game.Players.LocalPlayer.Character.Humanoid:MoveTo ( FindPlayer ( _string ).Character.HumanoidRootPart.Position )
 	end)
 	table.insert ( events, "walkto" )
 end
@@ -622,7 +544,7 @@ local function PMSpam ( _string2, _string )
     local event = game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest
     getgenv().pmspam = true
     while wait ( getgenv ( ).spamspeed ) and getgenv().pmspam == true do
-        event:FireServer ( _string2, GetPlayer ( _string ) )
+        event:FireServer ( _string2, FindPlayer ( _string ) )
     end
     table.insert ( events, "pmspam" )
 end
@@ -976,7 +898,7 @@ local function globalshadows ( ... )
 end
 
 local function printuserid ( player )
-    local user = GetPlayer (player)
+    local user = FindPlayer (player)
     if user then
         print (user.UserId)
     end
@@ -984,7 +906,7 @@ end
 
 local function copyuserid ( player )
 
-    local user = GetPlayer (player)
+    local user = FindPlayer (player)
     if user then
         setclipboard (player.UserId)
     end
@@ -1105,7 +1027,7 @@ end
 local function PathGoto (name)
 
     local pHumanoid = LOCALPLAYER.Character:FindFirstChildWhichIsA ("Humanoid")
-    local player = GetPlayer (name)
+    local player = FindPlayer (name)
 
     if player.Character and player.Character:FindFirstChildWhichIsA("Humanoid") and player.Character.Humanoid.Health > 0 then
         local waypoints, path = ComputePath (player.Character.HumanoidRootPart)
@@ -1231,7 +1153,7 @@ local function stopBot()
 end
 
 local function pffindgoto (name)
-    local player = GetPlayer (name)
+    local player = FindPlayer (name)
     if player and player.Character then
         PFGoto (player.Character.HumanoidRootPart.CFrame)
     end
@@ -1311,43 +1233,8 @@ local function highgraphics ()
     load(folder_name)
 end
 
-local function Spoof (instance, property, value)
-    if hookmetamethod then
-        local index; index = hookmetamethod (game, "__index", function (self, val)
-            local val = val:gsub("\0", "")
-            if val and val == property and not checkcaller() then
-                return value
-            end
-            return index(self, val)
-        end)
-
-        local newindex; newindex = hookmetamethod (game, "__newindex", function (self, val)
-            local val = val:gsub("\0", "")
-            if val and val == property and not checkcaller() then
-                return value
-            end
-            return newindex(self, val)
-        end)
-
-    else
-        Notify ("Your exploit doesn't support hookmetamethod", Color3.fromRGB(255,0,0), 18)
-    end
-end
-
-local function SpoofName ( name )
-    Spoof (game.Players.LocalPlayer, "Name", name)
-end
-
-local function SpoofSpeed (newValue)
-    Spoof (game.Players.LocalPlayer.Character.Humanoid, "WalkSpeed", newValue)
-end
-
-local function SpoofTime (newValue)
-    Spoof (game.Lighting, "ClockTime", tonumber(newValue))
-end
-
-local function SpoofGravity (newValue)
-    Spoof (game:GetService("Workspace"), "Gravity", newValue)
+local function CMDHistory ()
+    print(table.concat(command_history, " "))
 end
 
 -- // commands
@@ -1433,7 +1320,7 @@ addcmd ( "savewaypoints", "savewp", SaveWaypoints )
 addcmd ( "loadwaypoints", "loadwp", LoadWaypoints )
 addcmd ( "printwaypoints", "printwp", printwaypoints )
 addcmd ( "predictall","", PredictAll )
-addcmd ( "predict", "", LinearPrediction )
+--addcmd ( "predict", "", LinearPrediction )
 addcmd ( "setpredicttime", "", SetPredictTime )
 addcmd ( "walkbot","", Bot )
 addcmd ( "pgoto", "", pffindgoto )
@@ -1444,6 +1331,7 @@ addcmd ( "removeplugin", "removep", removeplugin )
 addcmd ( "printalias", "", PrintAlias )
 addcmd ( "printplugins", "", PrintPlugins )
 addcmd ( "test","", PathGoto )
+addcmd ( "history","", CMDHistory )
 -- // commands
 local HttpService = game:GetService("HttpService")
 
