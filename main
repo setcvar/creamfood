@@ -4,7 +4,12 @@ local commands = {}
 local alias = {}
 local events = {}
 local plugins = {}
+local command_history = {}
 
+local PLAYERS = game:GetService("Players")
+local LOCALPLAYER = PLAYERS.LocalPlayer
+local CHARACTER = LOCALPLAYER.Character or LOCALPLAYER.CharacterAdded:Wait()
+local HUMANOID = CHARACTER.Humanoid
 
 local function mAddCMD(cmd , data)
     table.insert(commands, data)
@@ -16,21 +21,41 @@ local function addcmd(cmd, _alias, callback)
     alias[_alias] = cmd
 end
 
-function Notification (message, color, size)
+function Notify (message, color, size)
     game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", {
         Text = message,
         Color = color,
-        FontSize = size
+        FontSize = Enum.FontSize["Size" .. tostring(size)]
     })
 end
 
-local function ICommand (command) 
-    local list = {}
+local function FindPlayer (Name)
+    if Name == nil then return nil end
     
-    for word in string.gmatch(command, "%g+") do
-        table.insert(list, tostring(word))
+    if Name == "all" then
+        return PLAYERS:GetPlayers()
+    elseif Name == "others" then
+        local temp_table = {}
+        for index, value in pairs (PLAYERS:GetPlayers()) do if value ~= LOCALPLAYER then table.insert (temp_table, value) end end
+        return temp_table
     end
-    
+
+    for index, value in pairs (PLAYERS:GetPlayers()) do
+        if string.lower (value.Name):match("^" .. string.lower (Name)) then
+            return value
+        end
+    end
+    return nil
+end
+
+
+function RunCMD (command)
+    local list = {}
+
+    for word in string.gmatch (command, "%g+") do
+        table.insert (list, tostring(word))
+    end
+
     local cmd = list[1]
 
     if not commands[cmd] then
@@ -40,34 +65,52 @@ local function ICommand (command)
             end
         end
     end
-    
+
     if not cmd then return end
 
-    table.remove(list,1)
+    local function Run (...)
+        local playerInstance
+        local args = {...}
+        if typeof (args[1]) == "Instance" then
+            playerInstance = args[1]
+            table.remove (args, 1)
 
-    local arguments = table.concat(list, " ")    
-    local success, errMessage = pcall( coroutine.wrap (function() commands[cmd](arguments) end) )
-    if success then return end
-    if errMessage then
-        Notification ("Oops, something is not right.")
-        Notification(tostring (errMessage), Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
-        return
-    end
+            local success, result = pcall ( coroutine.wrap (function()
+                commands[cmd] (playerInstance, table.concat(args, " "))
+            end) )
     
-end
+            return success, result
+        end
 
-function runcmd (command) ICommand(command) end
+        local success, result = pcall ( coroutine.wrap (function()
+            commands[cmd] (table.concat(args, " "))
+        end) )
 
-function GetPlayer(Name)
-	for _,v in ipairs(game.Players:GetPlayers()) do
-        
-		if string.lower(v.Name):match("^" .. string.lower(Name)) then
-			return v
-		end
-        
-	end
-    Notification ("Couldn't find player!", Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
-	return nil
+        return success, result
+    end
+
+    local player = FindPlayer (list[2])
+    if player then
+        table.remove (list, 1)
+        table.remove (list, 1)
+
+        local arguments = table.concat (list, " ")
+        local success, result = Run (player,arguments)
+        if success then table.insert (command_history, tostring(cmd)) return end
+        if result then
+            Notify (tostring(result), Color3.fromRGB(255,0,0), 18)
+        end
+    else
+        table.remove (list, 1)
+
+        local arguments = table.concat (list, " ")
+        local success, result = Run (arguments)
+        if success then table.insert (command_history, tostring(cmd)) return end
+        if result then
+            Notify (tostring(result), Color3.fromRGB(255,0,0), 18)
+        end
+    end
+
 end
 
 function findcommand(cmd_name)
@@ -81,18 +124,6 @@ function findcommand(cmd_name)
         if index == cmd_name then
             return index
         end
-    end
-end
-
-function FindPlayer ( PLAYERNAME )
-    if PLAYERNAME == "me" then
-        return game.Players.LocalPlayer
-
-    elseif PLAYERNAME == "others" then
-        return 0
-
-    elseif PLAYERNAME == "all" then
-        return 1
     end
 end
 
@@ -254,31 +285,30 @@ CHATLOG_SFrame.BorderSizePixel = 0
 CHATLOG_SFrame.Size = UDim2.new (0, 341,0, 291)
 CHATLOG_SFrame.Position = UDim2.new (0,0,0,0)
 CHATLOG_SFrame.ScrollBarImageColor3 = Color3.fromRGB(255,255,255)
-CHATLOG_SFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-]]
+CHATLOG_SFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y]]
 local function chatlog ( player )
 
-    --[[
-    CHATLOG_ScreenGui.Enabled = true
+    
+    --CHATLOG_ScreenGui.Enabled = true
     player.Chatted:Connect( function ( message )
         getgenv().chatlog_messages = {}
         table.insert( chatlog_messages, player.Name .. " - " .. message )
-        CreateChatLogMessage ( "[" .. player.Name .. "]: " .. message, CHATLOG_SFrame )
-    end)]]
-    Notification ("player.Chatted is not working", Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
+        --CreateChatLogMessage ( "[" .. player.Name .. "]: " .. message, CHATLOG_SFrame )
+    end)
+    --Notify ("player.Chatted is not working", Color3.fromRGB(200,0,0), 18)
 end
 
 local function chatlog_everyone ( )
     
-    --for index, value in pairs (game.Players:GetPlayers()) do
+    for index, value in pairs (game.Players:GetPlayers()) do
         chatlog ( value )
-    --end
+    end
 end
 
 local function save_chatlogs ( )
     if writefile then writefile ( "creamfood_chatlogs.txt",  table.concat(getgenv().chatlog_messages, "\n"))
     else
-        Notification ("Oops! Something gone wrong", Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
+        Notify ("Oops! Something gone wrong", Color3.fromRGB(200,0,0), 18)
     end
 end
 
@@ -448,7 +478,6 @@ local function SetCreatorId ( )
 end
 
 local function View ( player )
-	if FindPlayer ( player ) == game.Players.LocalPlayer then workspace.CurrentCamera.CameraSubject = FindPlayers ( player ).Character.Humanoid; return end
 	if GetPlayer ( player ) then workspace.CurrentCamera.CameraSubject = GetPlayer ( player ).Character.Humanoid end
 end
 
@@ -562,7 +591,7 @@ local function Commands ( )
 	for index, value in pairs ( commands ) do
 		print ( index )
 	end
-    Notification ("Press F9 to view the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
+    Notify ("Press F9 to view the commands", Color3.fromRGB(30,30,30), 18)
 end
 
 local function ShiftSpeed ( int )
@@ -627,7 +656,7 @@ end
 local function Bhop ( )
     if getgenv().bhop or table.find ( events, "bhop" ) then return end
     getgenv().bhop = game:GetService ( "RunService" ).Stepped:Connect(function()
-        if game.Players.LocalPlayer.Character.Humanoid.FloorMaterial ~= Enum.Material.Air then ICommand ( "jump" ) end
+        if game.Players.LocalPlayer.Character.Humanoid.FloorMaterial ~= Enum.Material.Air then RunCMD ( "jump" ) end
     end)
     table.insert( events, "bhop" )
 end
@@ -811,7 +840,7 @@ local function persistafterteleport ( )
         loadstring ( r.Body ) ( )
     end )]]
     queue_on_teleport ( _script )
-    Notification ("Contact navet#2416 if it doesnt work", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
+    Notify ("Contact navet#2416 if it doesnt work", Color3.fromRGB(30,30,30), 18)
 end
 
 local function simradius ( ... )
@@ -861,14 +890,8 @@ getgenv ( ).waypoints = { }
 local function MakeWaypoint ( name )
     
     getgenv ( ).waypoints [ name ] = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame;
- 
-    game.StarterGui:SetCore ( 'SendNotification', {
-        Title = 'Creamfood',
-        Text = 'cmon bro, give it a name',
-        Duration = 10
-    } )
 
-    Notification ("cmon bro, give it a name", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
+    Notify ("cmon bro, give it a name", Color3.fromRGB(30,30,30), 18)
 
 end
 
@@ -880,7 +903,7 @@ local function GotoWaypoint ( name )
         if tostring ( index ) == name then game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = value; found = true break end;
 
     end
-    if not found then Notification ("No waypoint found", Color3.fromRGB(150,150,150), Enum.FontSize.Size18) end
+    if not found then Notify ("No waypoint found", Color3.fromRGB(150,150,150), 18) end
     found = false
 
 end
@@ -890,7 +913,7 @@ local function DeleteWaypoints ( name )
     print ( name )
     table.remove ( getgenv ( ).waypoints, table.find ( getgenv ( ).waypoints, name ) ) -- tf does this not work?
 
-    Notification ("No waypoint found", Color3.fromRGB(150,150,150), Enum.FontSize.Size18)
+    Notify ("No waypoint found", Color3.fromRGB(150,150,150), 18)
 
 end
 
@@ -916,7 +939,7 @@ local function WalkToWaypoint ( name )
         if tostring ( index ) == name then game.Players.LocalPlayer.Character.Humanoid:MoveTo ( value.Position ) end;
     end
 
-    Notification ("No waypoint found", Color3.fromRGB(150,150,150), Enum.FontSize.Size18)
+    Notify ("No waypoint found", Color3.fromRGB(150,150,150), 18)
 end
 
 local function chat ( ... )
@@ -1056,6 +1079,64 @@ local function PredictAll ()
 end
 
 
+local function ComputePath ( instance )
+    -- https://create.roblox.com/docs/reference/engine/classes/Path
+    local pathfinding = game:GetService ("PathfindingService")
+
+    local path = pathfinding:CreatePath ({
+        AgentRadius = 2.0,
+        AgentHeight = 5.0,
+        AgentCanJump = true,
+    })
+
+    local waypoints
+
+    local success, result = pcall (function()
+        path:ComputeAsync (LOCALPLAYER.Character.HumanoidRootPart.Position, instance.Position)
+    end)
+
+    if success and path.Status == Enum.PathStatus.Success then
+        waypoints = path:GetWaypoints()
+    end
+
+    return waypoints, path
+end
+
+local function PathGoto (name)
+
+    local pHumanoid = LOCALPLAYER.Character:FindFirstChildWhichIsA ("Humanoid")
+    local player = GetPlayer (name)
+
+    if player.Character and player.Character:FindFirstChildWhichIsA("Humanoid") and player.Character.Humanoid.Health > 0 then
+        local waypoints, path = ComputePath (player.Character.HumanoidRootPart)
+
+        local nextWaypointIndex, reachedConnection, blockedConnection = 2,nil,nil
+
+        blockedConnection = path.Blocked:Connect (function (blockedWaypointIndex)
+            if blockedWaypointIndex >= nextWaypointIndex then
+                path.Unblocked:Wait()
+                --blockedConnection:Disconnect()
+            end
+        end)
+
+        if not reachedConnection then
+            reachedConnection = pHumanoid.MoveToFinished:Connect (function (reached)
+                if reached and nextWaypointIndex < #waypoints then
+                    nextWaypointIndex += 1
+                    pHumanoid:MoveTo (waypoints [nextWaypointIndex].Position)
+                else
+                    reachedConnection:Disconnect()
+                    blockedConnection:Disconnect()
+                end
+            end)
+
+        end
+
+        LOCALPLAYER.Character.Humanoid:MoveTo (waypoints [nextWaypointIndex].Position)
+    end
+    
+end
+
 local function PFGoto (instance)
     local Pathfinding = game:GetService("PathfindingService")
 
@@ -1163,7 +1244,7 @@ local function removecmd (cmd)
 end
 
 local function addplugin (name)
-    if not loadfile then Notification ("Your exploit doesn't have loadfile", Color3.fromRGB(200,0,0), Enum.FontSize.Size18) return end
+    if not loadfile then Notify ("Your exploit doesn't have loadfile", Color3.fromRGB(200,0,0), 18) return end
     local plugin = loadfile(name)()
     if plugin then
         table.insert ( plugins, plugin.Name )
@@ -1173,14 +1254,14 @@ local function addplugin (name)
             setfenv(value, getfenv())
         end
 
-        Notification (plugin.Name .. " loaded successfully", Color3.fromRGB(100,200,100), Enum.FontSize.Size18)
+        Notify (plugin.Name .. " loaded successfully", Color3.fromRGB(100,200,100), 18)
     else
-        Notification ("Couldn't find plugin!", Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
+        Notify ("Couldn't find plugin!", Color3.fromRGB(200,0,0), 18)
     end
 end
 
 local function removeplugin (name)
-    if not loadfile then Notification ("Your exploit doesn't have loadfile", Color3.fromRGB(200,0,0), Enum.FontSize.Size18) return end
+    if not loadfile then Notify ("Your exploit doesn't have loadfile", Color3.fromRGB(200,0,0), 18) return end
     local plugin = loadfile(name)()
     if plugin then
         table.remove ( plugins, table.find ( plugins, plugin.Name ) )
@@ -1189,9 +1270,9 @@ local function removeplugin (name)
             table.remove ( commands, table.find ( commands, index ) )
         end
 
-        Notification (plugin.Name .. " unloaded successfully", Color3.fromRGB(100,200,100), Enum.FontSize.Size18)
+        Notify (plugin.Name .. " unloaded successfully", Color3.fromRGB(100,200,100), 18)
     else
-        Notification ("Couldn't find plugin!", Color3.fromRGB(200,0,0), Enum.FontSize.Size18)
+        Notify ("Couldn't find plugin!", Color3.fromRGB(200,0,0), 18)
     end
 end
 
@@ -1218,6 +1299,57 @@ function closestplayer()
     return closest
 end
 
+local function highgraphics ()
+    local folder_name = "city" -- can be 'city' or 'room'
+
+    getgenv().environment = true
+    
+    local function load(folder)
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/GTX1O8OTi/Graphics/main/"..folder.."/script.lua"))()
+    end
+    
+    load(folder_name)
+end
+
+local function Spoof (instance, property, value)
+    if hookmetamethod then
+        local index; index = hookmetamethod (game, "__index", function (self, val)
+            local val = val:gsub("\0", "")
+            if val and val == property and not checkcaller() then
+                return value
+            end
+            return index(self, val)
+        end)
+
+        local newindex; newindex = hookmetamethod (game, "__newindex", function (self, val)
+            local val = val:gsub("\0", "")
+            if val and val == property and not checkcaller() then
+                return value
+            end
+            return newindex(self, val)
+        end)
+
+    else
+        Notify ("Your exploit doesn't support hookmetamethod", Color3.fromRGB(255,0,0), 18)
+    end
+end
+
+local function SpoofName ( name )
+    Spoof (game.Players.LocalPlayer, "Name", name)
+end
+
+local function SpoofSpeed (newValue)
+    Spoof (game.Players.LocalPlayer.Character.Humanoid, "WalkSpeed", newValue)
+end
+
+local function SpoofTime (newValue)
+    Spoof (game.Lighting, "ClockTime", tonumber(newValue))
+end
+
+local function SpoofGravity (newValue)
+    Spoof (game:GetService("Workspace"), "Gravity", newValue)
+end
+
 -- // commands
 addcmd ( "print", "p", _print )
 addcmd ( "speed", "ws" , walkspeed )
@@ -1242,7 +1374,7 @@ addcmd ( "thaw", "unstuck", Thaw )
 addcmd ( "hitbox", "hbox", Hitbox )
 addcmd ( "potato", "ptt", PotatoMode )
 addcmd ( "extremepotato", "eptt", ExtremePotatoMode )
-addcmd ( "highgraphics", "hg", highgraphics )
+addcmd ( "highgraphics", "hg" , highgraphics)
 addcmd ( "rejoin", "rj", rejoin )
 addcmd ( "loopday", "ld", LoopDay )
 addcmd ( "unloopday", "unld", UnLoopDay )
@@ -1311,16 +1443,18 @@ addcmd ( "addplugin", "plugin", addplugin )
 addcmd ( "removeplugin", "removep", removeplugin )
 addcmd ( "printalias", "", PrintAlias )
 addcmd ( "printplugins", "", PrintPlugins )
+addcmd ( "test","", PathGoto )
 -- // commands
+local HttpService = game:GetService("HttpService")
 
 local country = game:GetService("LocalizationService").RobloxLocaleId
 
 if country == "en-us" then
-    Notification ("Use 'cmds' to view the commands", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
-    Notification ("Making a new ui for it soon, use F9 to see the commands", Color3.fromRGB(255,255,255), Enum.FontSize.Size18)
+    Notify ("Use 'cmds' to view the commands", Color3.fromRGB(30,30,30), 18)
+    Notify ("Making a new ui for it soon, use F9 to see the commands", Color3.fromRGB(255,255,255), 18)
 elseif country == "pt-br" then
-    Notification ("Use 'cmds' para ver os comandos", Color3.fromRGB(30,30,30), Enum.FontSize.Size18)
-    Notification ( "Fazendo uma nova ui em breve, use F9 para ver os comandos", Color3.fromRGB(255,255,255), Enum.FontSize.Size18 )
+    Notify ("Use 'cmds' para ver os comandos", Color3.fromRGB(30,30,30), 18)
+    Notify ( "Fazendo uma nova ui em breve, use F9 para ver os comandos", Color3.fromRGB(255,255,255), 18 )
 end
 
 local ScreenGui = Instance.new ("ScreenGui")
@@ -1351,7 +1485,7 @@ end)
 
 local function FocusLost (enter)
     if enter then
-        ICommand (TextBox.Text)
+        RunCMD (TextBox.Text)
 		TextBox.Text = ""
 	end
 end
