@@ -73,37 +73,32 @@ function RunCMD (command)
         local args = {...}
         if typeof (args[1]) == "Instance" then
             playerInstance = args[1]
-            table.remove (args, 1)
 
             local success, result = pcall ( coroutine.wrap (function()
-                commands[cmd] (playerInstance, table.concat(args, " "))
+                commands[cmd] (playerInstance, table.concat(args, " ",2))
             end) )
-    
+
             return success, result
         end
 
         local success, result = pcall ( coroutine.wrap (function()
             commands[cmd] (table.concat(args, " "))
         end) )
-
+        
+        table.clear (args)
         return success, result
     end
 
     local player = FindPlayer (list[2])
     if player then
-        table.remove (list, 1)
-        table.remove (list, 1)
-
-        local arguments = table.concat (list, " ")
+        local arguments = table.concat (list, " ", 3)
         local success, result = Run (player,arguments)
         if success then table.insert (command_history, tostring(cmd)) return end
         if result then
             Notify (tostring(result), Color3.fromRGB(255,0,0), 18)
         end
     else
-        table.remove (list, 1)
-
-        local arguments = table.concat (list, " ")
+        local arguments = table.concat (list, " ", 2)
         local success, result = Run (arguments)
         if success then table.insert (command_history, tostring(cmd)) return end
         if result then
@@ -111,6 +106,7 @@ function RunCMD (command)
         end
     end
 
+    table.clear (list)
 end
 
 function findcommand(cmd_name)
@@ -245,7 +241,6 @@ local function drugs ( )
 end
 
 
---[[
 local lastMessage
 local function CreateChatLogMessage ( message, parent )
     local label = Instance.new ("TextLabel")
@@ -285,24 +280,34 @@ CHATLOG_SFrame.BorderSizePixel = 0
 CHATLOG_SFrame.Size = UDim2.new (0, 341,0, 291)
 CHATLOG_SFrame.Position = UDim2.new (0,0,0,0)
 CHATLOG_SFrame.ScrollBarImageColor3 = Color3.fromRGB(255,255,255)
-CHATLOG_SFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y]]
-local function chatlog ( player )
-
-    
-    --CHATLOG_ScreenGui.Enabled = true
-    player.Chatted:Connect( function ( message )
-        getgenv().chatlog_messages = {}
-        table.insert( chatlog_messages, player.Name .. " - " .. message )
-        --CreateChatLogMessage ( "[" .. player.Name .. "]: " .. message, CHATLOG_SFrame )
-    end)
-    --Notify ("player.Chatted is not working", Color3.fromRGB(200,0,0), 18)
-end
+CHATLOG_SFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y--[[]]
 
 local function chatlog_everyone ( )
-    
-    for index, value in pairs (game.Players:GetPlayers()) do
+    -- infinite yield
+    --[[for index, value in pairs (game.Players:GetPlayers()) do
         chatlog ( value )
-    end
+    end]]
+    CHATLOG_ScreenGui.Enabled = true
+    local chatevents = game.ReplicatedStorage:WaitForChild ("DefaultChatSystemChatEvents", math.huge)
+    local messageevent = chatevents:WaitForChild ("OnMessageDoneFiltering", math.huge).OnClientEvent:Connect (function(data)
+        if data ~= nil then
+            local player = tostring (data.FromSpeaker)
+            local message = tostring (data.Message)
+            local channel = tostring (data.OriginalChannel)
+            
+            if string.find (channel, "To ") then
+                message = "/w " .. string.gsub (channel, "To", "") .. message
+            end
+
+            if channel == "Team" then
+                message = "/team " .. message
+            end
+
+            message = "[" .. player .. "]: " .. message
+
+            CreateChatLogMessage (message, CHATLOG_SFrame)
+        end
+    end)
 end
 
 local function save_chatlogs ( )
@@ -1256,8 +1261,6 @@ addcmd ( "drugs", "", drugs )
 addcmd ( "chatlog", "clog", chatlog_everyone )
 addcmd ( "savechatlog", "saveclog", save_chatlogs )
 addcmd ( "goto", "to", _goto )
-addcmd ( "freeze", "stuck", Freeze )
-addcmd ( "thaw", "unstuck", Thaw )
 addcmd ( "hitbox", "hbox", Hitbox )
 addcmd ( "potato", "ptt", PotatoMode )
 addcmd ( "extremepotato", "eptt", ExtremePotatoMode )
@@ -1320,7 +1323,6 @@ addcmd ( "savewaypoints", "savewp", SaveWaypoints )
 addcmd ( "loadwaypoints", "loadwp", LoadWaypoints )
 addcmd ( "printwaypoints", "printwp", printwaypoints )
 addcmd ( "predictall","", PredictAll )
---addcmd ( "predict", "", LinearPrediction )
 addcmd ( "setpredicttime", "", SetPredictTime )
 addcmd ( "walkbot","", Bot )
 addcmd ( "pgoto", "", pffindgoto )
@@ -1341,7 +1343,7 @@ if country == "en-us" then
     Notify ("Use 'cmds' to view the commands", Color3.fromRGB(30,30,30), 18)
     Notify ("Making a new ui for it soon, use F9 to see the commands", Color3.fromRGB(255,255,255), 18)
 elseif country == "pt-br" then
-    Notify ("Use 'cmds' para ver os comandos", Color3.fromRGB(30,30,30), 18)
+    Notify ("Use 'cmds' para ver os comandos", Color3.fromRGB(255, 255, 255), 18)
     Notify ( "Fazendo uma nova ui em breve, use F9 para ver os comandos", Color3.fromRGB(255,255,255), 18 )
 end
 
