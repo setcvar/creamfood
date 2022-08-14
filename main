@@ -569,7 +569,6 @@ addcmd ('unnodisplaynames', {
 				end
 			end
 		end
-		table.clear (commands.nodisplaynames.names)
 	end
 })
 
@@ -604,7 +603,67 @@ addcmd ('unfreeze', {
 	end
 })
 
+addcmd ('predict', {
+	['needs_player'] = true,
+	['connections'] = {},
+	['parts'] = {},
+	['func'] = function(imtable: table)
+		local playernames = imtable[1]
+		local playerobjs = imtable[2]
 
+		for useless, player in ipairs (playerobjs) do
+			
+			local character = player.Character or player.CharacterAdded:Wait()
+			local part = Instance.new ('Part')
+			part.Anchored = true
+			part.CanCollide = false
+			part.Parent = workspace
+			part.Size = Vector3.one
+			table.insert (commands.predict.parts, part)
+			part.Material = Enum.Material.Neon
+			table.insert(commands.predict.connections, player.Character.Humanoid.Died:Connect(function() part:Destroy() end))
+			table.insert(commands.predict.connections, game:GetService'RunService'.Heartbeat:Connect(function(step)
+				if character.HumanoidRootPart then
+					local cframe = predictstep (character.HumanoidRootPart, step)
+					part.CFrame = cframe
+				end
+			end))
+
+		end
+	end
+})
+
+addcmd ('unpredict', {
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.predict.connections) do
+			value:Disconnect()
+		end
+
+		for index, value in ipairs (commands.predict.parts) do
+			value:Destroy()
+		end
+	end
+})
+
+-- part: Instance, step: number
+function predictstep (...): CFrame
+	local args = {...}
+
+	local part: Instance = args[1]
+
+	local step: number = args[2] or 0
+
+	local currentposition: Vector3 = part.Position
+	local currentvelocity: Vector3 = part.AssemblyLinearVelocity or Vector3.zero
+
+	local currentorientation = part.Orientation
+	local currentangularvelocity = part.AssemblyAngularVelocity
+
+	local predictedstep = CFrame.new ( (currentposition + (currentvelocity/2) * step * workspace.Gravity * step), currentorientation  )
+
+	return predictedstep
+end
 
 -- message: string, color: Color3, size: number
 function Notify (...)
@@ -759,3 +818,5 @@ TextBox.FocusLost:Connect (
 		end
 	end
 )
+
+Notify ('Use F9 to view commands for now')
