@@ -30,12 +30,8 @@ game.Players.LocalPlayer.CharacterAdded:Connect(function()
 	CHARACTER = LOCALPLAYER.Character or LOCALPLAYER.CharacterAdded:Wait()
 end)
 
--- cmd: string, properties: table
-function addcmd (...)
-	local args = {...}
-	local cmd = args[1]
-	local properties = args[2]
-
+-- properties can be anything you want, just be sure that it has at least ['func'] or ["func"]
+function addcmd (cmd: string, properties: table)
 	commands[cmd] = properties
 end
 
@@ -646,6 +642,55 @@ addcmd ('unpredict', {
 	end
 })
 
+addcmd ('gravity', {
+	['alias'] = 'grav',
+	['needs_player'] = false,
+	['func'] = function (imtable: table)
+		game:GetService'Workspace'.Gravity = tonumber(imtable[1])
+	end
+})
+
+addcmd ('esp', {
+	['alias'] = 'wallhack',
+	['needs_player'] = false,
+	['func'] = function ()
+		for index, value in ipairs (PLAYERS:GetPlayers()) do
+			if value == LOCALPLAYER then
+				continue
+			end
+
+			local camera = workspace.CurrentCamera
+
+			local vector, visible = camera:WorldToScreenPoint(value.Character.HumanoidRootPart.Position)
+
+			local gui = Instance.new ('ScreenGui')
+			gui.Parent = LOCALPLAYER.PlayerGui
+
+			local frame = Instance.new'Frame'
+			frame.Parent = gui
+			frame.AnchorPoint = Vector2.new (0.5,0.5)
+			frame.Position = UDim2.new(0, vector.X, 0, vector.Y)
+			frame.Size = UDim2.new (0,30,0,30)
+			game:GetService'RunService'.RenderStepped:Connect(function()
+				if value.Character.HumanoidRootPart then
+					vector, visible = camera:WorldToViewportPoint(value.Character.HumanoidRootPart.Position)
+					if visible then
+						frame.Visible = true
+						frame.Position = UDim2.new(0, vector.X, 0, vector.Y)
+						--frame.Size = UDim2.new (0, 30,0, 30)
+						frame.Size = UDim2.new (0,(vector.Unit.X-camera.FieldOfView-vector.Unit.Z), 0, (vector.Unit.Y-camera.DiagonalFieldOfView-vector.Unit.Z))
+					else
+						frame.Visible = false
+					end
+				else
+					frame.Visible = false
+				end
+			end)
+		end
+	end
+})
+
+
 -- part: Instance, step: number
 function predictstep (...): CFrame
 	local args = {...}
@@ -661,7 +706,7 @@ function predictstep (...): CFrame
 	local currentangularvelocity = part.AssemblyAngularVelocity
 
 	local predictedstep = CFrame.new ( (currentposition + (currentvelocity/2) * step * workspace.Gravity * step), currentorientation  )
-
+	
 	return predictedstep
 end
 
