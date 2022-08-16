@@ -8,7 +8,8 @@ addcmd ("name", {
 	['alias'] = 'yeet',
 	['parts'] = {},
 	['events'] = {},
-	['connections'] = {}
+	['connections'] = {},
+	['players'] = {}
 })
 }
 
@@ -650,6 +651,7 @@ addcmd ('gravity', {
 	end
 })
 
+-- very basic but i dont have enough time today
 addcmd ('esp', {
 	['alias'] = 'wallhack',
 	['needs_player'] = false,
@@ -690,6 +692,121 @@ addcmd ('esp', {
 	end
 })
 
+addcmd ('fov', {
+	['alias'] = 'changefov',
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		workspace.CurrentCamera.FieldOfView = tonumber (imtable[1])
+	end
+})
+
+addcmd ('spam', {
+	['alias'] = 'annoy',
+	['needs_player'] = false,
+	['events'] = {},
+	['func'] = function(imtable: table)
+		commands.spam.events.spamvar = true
+		while commands.spam.events.spamvar do
+			wait(3)
+			game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer (imtable[1], 'All')
+		end
+	end
+})
+
+addcmd ('unspam', {
+	['alias'] = 'unannoy',
+	['needs_player'] = false,
+	['func'] = function()
+		table.clear(commands.spam.events)
+	end
+})
+
+addcmd ('pmspam', {
+	['alias'] = 'pmannoy',
+	['needs_player'] = true,
+	['events'] = {},
+	['func'] = function(imtable: table)
+		local playername = imtable[1]
+		commands.pmspam.events.spamvar = true
+		for index, value in ipairs (playername) do
+			while commands.pmspam.events.spamvar do
+				wait(3)
+				game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer (imtable[1], value)
+			end
+		end
+	end
+})
+
+addcmd ('unpmspam', {
+	['alias'] = 'unpmannoy',
+	['events'] = {},
+	['func'] = function()
+		table.clear(commands.pmspam.events)
+	end
+})
+
+addcmd ('walkto', {
+	['alias'] = 'pathfindwalk',
+	['needs_player'] = true,
+	['events'] = {},
+	['func'] = function(imtable: table)
+		local playernames = imtable[1]
+		local playerobjs = imtable[2]
+		
+		local pathfinding = game:GetService'PathfindingService'
+		local path = pathfinding:CreatePath({
+			AgentRadius = 2.0,
+			AgentCanJump = true,
+			AgentHeight = 5.0
+		})
+
+		local waypoints, reached, blocked, nextindex
+
+		for index, value in ipairs (playerobjs) do
+			local success, result = pcall(function()
+				path:ComputeAsync(CHARACTER.HumanoidRootPart.Position, value.Character.HumanoidRootPart.Position)
+			end)
+
+			if success and path.Status == Enum.PathStatus.Success then
+				waypoints = path:GetWaypoints()
+			end
+
+			blocked = path.Blocked:Connect(function(blockedwaypoint)
+				if blockedwaypoint >= nextindex then
+					path.Unblocked:Wait()
+				end
+			end)
+			table.insert (commands.walkto.events, blocked)
+
+			if not reached then
+				reached = CHARACTER.Humanoid.MoveToFinished:Connect(function(reached)
+					if reached and nextindex < #waypoints then
+						nextindex += 1
+						CHARACTER.Humanoid:MoveTo (waypoints [nextindex].Position)
+					else
+						for index2, value2 in ipairs (commands.walkto.events) do
+							value2:Disconnect()
+						end
+						table.clear (commands.walkto.events)
+					end
+				end)
+				table.insert (commands.walkto.events, reached)
+			end
+			nextindex = 2
+			CHARACTER.Humanoid:MoveTo (waypoints[nextindex].Position)
+		end
+	end
+})
+
+addcmd ('unwalkto', {
+	['alias'] = 'unpathfindwalkto',
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.walkto.events) do
+			value:Disconnect()
+		end
+	end
+})
 
 -- part: Instance, step: number
 function predictstep (...): CFrame
@@ -705,6 +822,9 @@ function predictstep (...): CFrame
 	local currentorientation = part.Orientation
 	local currentangularvelocity = part.AssemblyAngularVelocity
 
+	-- i currently dont know how to calculate acceleration on ROBLOX; with a = (initialVelocity - finalVelocity) / predicted time, it should work but doesn't
+
+	-- formula: position + (acceleration/2) * step * gravity * step
 	local predictedstep = CFrame.new ( (currentposition + (currentvelocity/2) * step * workspace.Gravity * step), currentorientation  )
 	
 	return predictedstep
