@@ -292,12 +292,15 @@ addcmd ('view', {
 	['needs_player'] = true,
 	['func'] = function (imtable: table)
 		workspace.CurrentCamera.CameraSubject = imtable[2][1].Character.Humanoid
+
+		imtable[2][1].Charcter.Humanoid.Died:Connect(function()
+			workspace.CurrentCamera.CameraSubject = LOCALPLAYER.Character.Humanoid
+		end)
 	end
 })
 
 addcmd ('infjump', {
 	['needs_player'] = false,
-	['events'] = {},
 	['func'] = function()
 
 		game:GetService("ContextActionService"):BindAction("JUMPFOREVERYEEEEEEEEEEEEEEEEEEEE", function(actionName, state, object)
@@ -530,8 +533,7 @@ addcmd ('togglerotate', {
 	end
 })
 
-addcmd ('nodisplaynames', {
-	['alias'] = 'hidedisplaynames',
+addcmd ('hidedisplaynames', {
 	['needs_player'] = false,
 	['events'] = {},
 	['names'] = {},
@@ -543,18 +545,17 @@ addcmd ('nodisplaynames', {
 		end
 
 		table.insert (commands.nodisplaynames.events, PLAYERS.PlayerAdded:Connect(function(player)
-			player.CharacterAdded:Wait()
+			local character = player.Character or player.CharacterAdded:Wait()
 			table.insert ( commands.nodisplaynames.names, player.Name.." "..player.DisplayName)
 			player.DisplayName = player.Name
-			if player.Character then
-				player.Character.Humanoid.DisplayName = player.Name
+			if character then
+				character.Humanoid.DisplayName = player.Name
 			end
 		end))
 	end
 })
 
-addcmd ('unnodisplaynames', {
-	['alias'] = 'showdisplaynames',
+addcmd ('showdisplaynames', {
 	['needs_player'] = false,
 	['func'] = function()
 		for index, value in ipairs (commands.nodisplaynames.names) do
@@ -794,6 +795,23 @@ addcmd ('walkto', {
 			end
 			nextindex = 2
 			CHARACTER.Humanoid:MoveTo (waypoints[nextindex].Position)
+
+			for index, value in ipairs (waypoints) do
+				local part = Instance.new("Part")
+				part.Parent = workspace
+				part.Size = Vector3.one
+				part.Color = Color3.new (1, 1, 1)
+				part.CastShadow = false
+				part.CanCollide = false
+				part.Shape = Enum.PartType.Ball
+				part.CanTouch = false
+				part.CanQuery = false
+				part.Anchored = true
+				part.Material = Enum.Material.Neon
+				part.Position = value.Position + Vector3.new (0, 2.5, 0)
+
+				game:GetService('Debris'):AddItem (part, #waypoints/2)
+			end
 		end
 	end
 })
@@ -804,6 +822,47 @@ addcmd ('unwalkto', {
 	['func'] = function()
 		for index, value in ipairs (commands.walkto.events) do
 			value:Disconnect()
+		end
+	end
+})
+
+addcmd ('shiftspeed', {
+	['needs_player'] = false,
+	['events'] = {},
+	['func'] = function(imtable: table)
+		commands.shiftspeed.events.speed = CHARACTER.Humanoid.WalkSpeed
+		local number = tonumber(imtable[1])
+		game:GetService('ContextActionService'):BindAction(
+			'ILIKECHEESE',
+			function(actionname, inputstate, inputobject)
+				if inputstate == Enum.UserInputState.Begin then
+					CHARACTER.Humanoid.WalkSpeed = number
+				elseif inputstate == Enum.UserInputState.End then
+					CHARACTER.Humanoid.WalkSpeed = commands.shiftspeed.events.speed
+				end
+			end,
+		false,
+		Enum.KeyCode.LeftShift)
+	end
+})
+
+addcmd ('unshiftspeed', {
+	['needs_player'] = false,
+	['func'] = function()
+		game:GetService('ContextActionService'):UnbindAction('ILIKECHEESE')
+		CHARACTER.Humanoid.WalkSpeed = commands.shiftspeed.events.speed
+		table.clear (commands.shiftspeed.events)
+	end
+})
+
+addcmd ('tpunanchored', {
+	['alias'] = 'tpun',
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (game:GetService('Workspace'):GetDescendants()) do
+			if value:IsA'BasePart' and value.Anchored == false then
+				value.Position = CHARACTER.HumanoidRootPart.Position
+			end
 		end
 	end
 })
@@ -963,6 +1022,55 @@ TextBox.PlaceholderText = "cmds"
 TextBox.TextColor3 = Color3.fromRGB (255,255,255)
 TextBox.Text = ""
 
+local cmdgui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local cmdlist = Instance.new("ScrollingFrame")
+local exampleframe = Instance.new("Frame")
+local examplelabel = Instance.new("TextLabel")
+
+cmdgui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+cmdgui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+Frame.Parent = cmdgui
+Frame.BackgroundColor3 = Color3.fromRGB(98, 220, 184)
+Frame.BorderSizePixel = 0
+Frame.Position = UDim2.new(0, cmdgui.AbsoluteSize.X-240, 0, cmdgui.AbsoluteSize.Y-224)
+Frame.Size = UDim2.new(0, 236, 0, 222)
+
+cmdlist.Parent = Frame
+
+cmdlist.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+cmdlist.BorderSizePixel = 0
+cmdlist.Size = UDim2.new(0, 236, 0, 220)
+cmdlist.ScrollBarThickness = 5
+cmdlist.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local lastpos = UDim2.new(0,5,0,-23)
+local function createcommand (text)
+
+	local exampleframe = Instance.new ('Frame')
+	exampleframe.Name = "exampleframe"
+	exampleframe.Parent = cmdlist
+	exampleframe.BackgroundColor3 = Color3.fromRGB(98, 220, 184)
+	exampleframe.BorderSizePixel = 0
+	exampleframe.Size = UDim2.new(0, 218, 0, 23)
+	exampleframe.Position = lastpos + UDim2.fromOffset (0,30)
+	lastpos = exampleframe.Position
+
+	local examplelabel = Instance.new ('TextLabel')
+	examplelabel.Name = "examplelabel"
+	examplelabel.Parent = exampleframe
+	examplelabel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	examplelabel.BorderSizePixel = 0
+	examplelabel.Size = UDim2.new(1, 0, 0, 22)
+	examplelabel.Font = Enum.Font.SourceSans
+	examplelabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	examplelabel.TextSize = 18
+	examplelabel.TextWrapped = true
+	examplelabel.Text = text
+	return exampleframe
+end
+
 game:GetService ("ContextActionService"):BindAction (
 	"Focus",
 	function()
@@ -983,5 +1091,13 @@ TextBox.FocusLost:Connect (
 		end
 	end
 )
+
+table.foreach(commands, function(key, value)
+	if value.alias then
+		createcommand(key .. ': ' .. value.alias)
+	else
+		createcommand (key)
+	end
+end)
 
 Notify ('Use F9 to view commands for now')
