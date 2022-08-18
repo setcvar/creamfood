@@ -20,6 +20,7 @@ local commands = {}
 -- constants
 local GuiService = game:GetService("GuiService")
 local PLAYERS = game:GetService ("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LOCALPLAYER = PLAYERS.LocalPlayer
 local CHARACTER = LOCALPLAYER.Character or LOCALPLAYER.CharacterAdded:Wait()
 local GUI: ScreenGui
@@ -658,35 +659,54 @@ addcmd ('esp', {
 	['needs_player'] = false,
 	['func'] = function ()
 		for index, value in ipairs (PLAYERS:GetPlayers()) do
-			if value == LOCALPLAYER then
+			--[[if value == LOCALPLAYER then
 				continue
-			end
+			end]]
 
 			local camera = workspace.CurrentCamera
 
 			local vector, visible = camera:WorldToScreenPoint(value.Character.HumanoidRootPart.Position)
 
-			local gui = Instance.new ('ScreenGui')
+			local Rectangle = Drawing.new ('Square')
+			Rectangle.Position = Vector2.new (0,0)
+			Rectangle.Size = Vector2.new (10,10)
+			Rectangle.Color = Color3.fromRGB(255,255,255)
+			Rectangle.Visible = true
+			--[[local gui = Instance.new ('ScreenGui')
 			gui.Parent = LOCALPLAYER.PlayerGui
+			gui.IgnoreGuiInset = true
 
 			local frame = Instance.new'Frame'
 			frame.Parent = gui
 			frame.AnchorPoint = Vector2.new (0.5,0.5)
 			frame.Position = UDim2.new(0, vector.X, 0, vector.Y)
 			frame.Size = UDim2.new (0,30,0,30)
+			frame.AutomaticSize = Enum.AutomaticSize.None]]
 			game:GetService'RunService'.RenderStepped:Connect(function()
 				if value.Character.HumanoidRootPart then
 					vector, visible = camera:WorldToViewportPoint(value.Character.HumanoidRootPart.Position)
 					if visible then
-						frame.Visible = true
-						frame.Position = UDim2.new(0, vector.X, 0, vector.Y)
+						if value.Character.HumanoidRootPart.Position.Magnitude-CHARACTER.HumanoidRootPart.Position.Magnitude < 150 then
+							--frame.Visible = true
+							Rectangle.Visible = true
+						end
+
+						Rectangle.Position = Vector2.new (vector.X, vector.Y)
+						Rectangle.Size = Vector2.new (vector.X-camera.FieldOfView-vector.Z, vector.Y-camera.DiagonalFieldOfView-vector.Z)
+						
+						--[[local sizeX: number = (vector.Unit.X+vector.Unit.Z)
+						local sizeY: number = (vector.Unit.Y)
+						frame.Size = UDim2.new (0, sizeX,  0, sizeY)
+						frame.Position = UDim2.new(0, vector.X, 0, vector.Y)]]
 						--frame.Size = UDim2.new (0, 30,0, 30)
-						frame.Size = UDim2.new (0,(vector.Unit.X-camera.FieldOfView-vector.Unit.Z), 0, (vector.Unit.Y-camera.DiagonalFieldOfView-vector.Unit.Z))
+						--frame.Size = UDim2.new (0,(vector.Unit.X-camera.FieldOfView-vector.Unit.Z), 0, (vector.Unit.Y-camera.DiagonalFieldOfView-vector.Unit.Z))
 					else
-						frame.Visible = false
+						--frame.Visible = false
+						Rectangle.Visible = false
 					end
 				else
-					frame.Visible = false
+					--frame.Visible = false
+					Rectangle.Visible = false
 				end
 			end)
 		end
@@ -867,6 +887,14 @@ addcmd ('tpunanchored', {
 	end
 })
 
+addcmd ('rmcmd', {
+	['alias'] = 'removecmd',
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		commands[imtable[1]] = nil
+	end
+})
+
 -- part: Instance, step: number
 function predictstep (...): CFrame
 	local args = {...}
@@ -879,12 +907,11 @@ function predictstep (...): CFrame
 	local currentvelocity: Vector3 = part.AssemblyLinearVelocity or Vector3.zero
 
 	local currentorientation = part.Orientation
-	local currentangularvelocity = part.AssemblyAngularVelocity
 
 	-- i currently dont know how to calculate acceleration on ROBLOX; with a = (initialVelocity - finalVelocity) / predicted time, it should work but doesn't
 
 	-- formula: position + (acceleration/2) * step * gravity * step
-	local predictedstep = CFrame.new ( (currentposition + (currentvelocity/2) * step * workspace.Gravity * step), currentorientation  )
+	local predictedstep = CFrame.new ( (currentposition + (currentvelocity/2) * step * workspace.Gravity * step), currentorientation )
 	
 	return predictedstep
 end
@@ -910,7 +937,22 @@ end
 local function findplayer (playername: string): table
 	local name: table = {}
 	local obj: table = {}
+
 	
+	-- check to see if its $random which means select a random player
+	-- using $ for the rare cases the player has 'random' in their name
+	local plrnm: string = string.gsub(playername, '%$', '', 1)
+	if plrnm == 'random' then
+		-- get all players
+		local getplayers = PLAYERS:GetPlayers()
+		-- use math.random to select a random index starting from 1 to the length of getplayers
+		local player = getplayers[math.random(1,#getplayers)]
+		table.insert (name, player.Name)
+		table.insert (obj, player)
+		plrnm = nil
+		return name, obj
+	end
+
 	-- if everyone then just return every name and instance
 	if playername == 'all' then
 		for index, value in ipairs (PLAYERS:GetPlayers()) do
@@ -947,6 +989,13 @@ local function findplayer (playername: string): table
 		end
 	end
 
+	for index, value in ipairs (PLAYERS:GetPlayers()) do
+		if string.lower (value.DisplayName):match ("^" .. string.lower(playername)) then
+			table.insert (name, value.Name)
+			table.insert (obj,value)
+		end
+	end
+	
 	return name, obj
 end
 
@@ -962,7 +1011,7 @@ local function runcmd (cmd: string)
 	local arguments = {}
 
 	-- if the command is not on the table commands
-	-- make a loop to see if it is on the alias
+	-- make a loop to see if it is on the alias table
 	if not commands[command] then
 		for index, value in pairs ( commands ) do
 			if value.alias == command then
@@ -1022,7 +1071,7 @@ TextBox.PlaceholderText = "cmds"
 TextBox.TextColor3 = Color3.fromRGB (255,255,255)
 TextBox.Text = ""
 
-local cmdgui = Instance.new("ScreenGui")
+--[[local cmdgui = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
 local cmdlist = Instance.new("ScrollingFrame")
 local exampleframe = Instance.new("Frame")
@@ -1069,7 +1118,7 @@ local function createcommand (text)
 	examplelabel.TextWrapped = true
 	examplelabel.Text = text
 	return exampleframe
-end
+end]]
 
 game:GetService ("ContextActionService"):BindAction (
 	"Focus",
@@ -1092,12 +1141,12 @@ TextBox.FocusLost:Connect (
 	end
 )
 
-table.foreach(commands, function(key, value)
+--[[table.foreach(commands, function(key, value)
 	if value.alias then
 		createcommand(key .. ': ' .. value.alias)
 	else
 		createcommand (key)
 	end
-end)
+end)]]
 
 Notify ('Use F9 to view commands for now')
