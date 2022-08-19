@@ -67,7 +67,7 @@ addcmd ('maxfps', {
 	['alias'] = nil,
 	['needs_player'] = false,
 	['func'] = function (imtext: string)
-		local setmaxfps = setmaxfps or set_fps_cap
+		local setmaxfps = setmaxfps or set_fps_cap or setfpscap
 		if setmaxfps then
 			local number = imtext[1]
 			setmaxfps(number)
@@ -890,7 +890,7 @@ addcmd ('unesp', {
 			value:Disconnect()
 			value = nil
 		end)
-		
+
 		table.clear (commands.esp.events)
 		table.clear (commands.esp.parts)
 	end
