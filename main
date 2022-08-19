@@ -18,12 +18,11 @@ addcmd ("name", {
 local commands = {}
 
 -- constants
-local GuiService = game:GetService("GuiService")
-local PLAYERS = game:GetService ("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LOCALPLAYER = PLAYERS.LocalPlayer
-local CHARACTER = LOCALPLAYER.Character or LOCALPLAYER.CharacterAdded:Wait()
+local PLAYERS: Players = game:GetService ("Players")
+local LOCALPLAYER: Player = PLAYERS.LocalPlayer
+local CHARACTER: Model = LOCALPLAYER.Character or LOCALPLAYER.CharacterAdded:Wait()
 local GUI: ScreenGui
+--local NEWOBJ = Instance.new
 -- constants
 
 game.Players.LocalPlayer.CharacterAdded:Connect(function()
@@ -653,66 +652,6 @@ addcmd ('gravity', {
 	end
 })
 
--- very basic but i dont have enough time today
-addcmd ('esp', {
-	['alias'] = 'wallhack',
-	['needs_player'] = false,
-	['func'] = function ()
-		for index, value in ipairs (PLAYERS:GetPlayers()) do
-			--[[if value == LOCALPLAYER then
-				continue
-			end]]
-
-			local camera = workspace.CurrentCamera
-
-			local vector, visible = camera:WorldToScreenPoint(value.Character.HumanoidRootPart.Position)
-
-			local Rectangle = Drawing.new ('Square')
-			Rectangle.Position = Vector2.new (0,0)
-			Rectangle.Size = Vector2.new (10,10)
-			Rectangle.Color = Color3.fromRGB(255,255,255)
-			Rectangle.Visible = true
-			--[[local gui = Instance.new ('ScreenGui')
-			gui.Parent = LOCALPLAYER.PlayerGui
-			gui.IgnoreGuiInset = true
-
-			local frame = Instance.new'Frame'
-			frame.Parent = gui
-			frame.AnchorPoint = Vector2.new (0.5,0.5)
-			frame.Position = UDim2.new(0, vector.X, 0, vector.Y)
-			frame.Size = UDim2.new (0,30,0,30)
-			frame.AutomaticSize = Enum.AutomaticSize.None]]
-			game:GetService'RunService'.RenderStepped:Connect(function()
-				if value.Character.HumanoidRootPart then
-					vector, visible = camera:WorldToViewportPoint(value.Character.HumanoidRootPart.Position)
-					if visible then
-						if value.Character.HumanoidRootPart.Position.Magnitude-CHARACTER.HumanoidRootPart.Position.Magnitude < 150 then
-							--frame.Visible = true
-							Rectangle.Visible = true
-						end
-
-						Rectangle.Position = Vector2.new (vector.X, vector.Y)
-						Rectangle.Size = Vector2.new (vector.X-camera.FieldOfView-vector.Z, vector.Y-camera.DiagonalFieldOfView-vector.Z)
-						
-						--[[local sizeX: number = (vector.Unit.X+vector.Unit.Z)
-						local sizeY: number = (vector.Unit.Y)
-						frame.Size = UDim2.new (0, sizeX,  0, sizeY)
-						frame.Position = UDim2.new(0, vector.X, 0, vector.Y)]]
-						--frame.Size = UDim2.new (0, 30,0, 30)
-						--frame.Size = UDim2.new (0,(vector.Unit.X-camera.FieldOfView-vector.Unit.Z), 0, (vector.Unit.Y-camera.DiagonalFieldOfView-vector.Unit.Z))
-					else
-						--frame.Visible = false
-						Rectangle.Visible = false
-					end
-				else
-					--frame.Visible = false
-					Rectangle.Visible = false
-				end
-			end)
-		end
-	end
-})
-
 addcmd ('fov', {
 	['alias'] = 'changefov',
 	['needs_player'] = false,
@@ -907,6 +846,53 @@ addcmd ('antitp', {
 				commands.antitp.position = CHARACTER.HumanoidRootPart.Position
 			end
 		end))
+	end
+})
+
+addcmd ('esp', {
+	['alias'] = 'wallhack',
+	['needs_player'] = false,
+	['parts'] = {},
+	['events'] = {},
+	['func'] = function()
+		local function CreateBox (object)
+			local box = Instance.new ('BoxHandleAdornment')
+			box.AlwaysOnTop = true
+			box.Parent = object
+			box.ZIndex = math.huge
+			box.Adornee = object
+			box.Size = object.Size + Vector3.one
+			table.insert (commands.esp.parts, box)
+			return box
+		end
+		table.foreach (PLAYERS:GetPlayers(), function(key, value)
+			CreateBox (value.Character.HumanoidRootPart)
+		end)
+
+		table.insert(commands.esp.events, game.Players.PlayerAdded:Connect(function(player: Player)
+			player.CharacterAdded:Connect(function(character: Model)
+				CreateBox (character.HumanoidRootPart)
+			end)
+		end))
+	end
+})
+
+addcmd ('unesp', {
+	['alias'] = 'unwallhack',
+	['needs_player'] = false,
+	['func'] = function()
+		table.foreach (commands.esp.parts, function(key, value)
+			value:Destroy()
+			value = nil
+		end)
+
+		table.foreach (commands.esp.events, function(key, value)
+			value:Disconnect()
+			value = nil
+		end)
+		
+		table.clear (commands.esp.events)
+		table.clear (commands.esp.parts)
 	end
 })
 
