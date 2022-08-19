@@ -895,6 +895,21 @@ addcmd ('rmcmd', {
 	end
 })
 
+addcmd ('antitp', {
+	['needs_player'] = false,
+	['events'] = {},
+	['func'] = function()
+		commands.antitp.position = CHARACTER.HumanoidRootPart.Position
+		table.insert (commands.antitp.events, game:GetService('RunService').Heartbeat:Connect(function()
+			if commands.antitp.position.Magnitude - CHARACTER.HumanoidRootPart.Position.Magnitude > 100 then
+				CHARACTER.HumanoidRootPart.Position = commands.antitp.position
+			else
+				commands.antitp.position = CHARACTER.HumanoidRootPart.Position
+			end
+		end))
+	end
+})
+
 -- part: Instance, step: number
 function predictstep (...): CFrame
 	local args = {...}
@@ -1012,12 +1027,26 @@ local function runcmd (cmd: string)
 
 	-- if the command is not on the table commands
 	-- make a loop to see if it is on the alias table
-	if not commands[command] then
+	--[[if not commands[command] then
 		for index, value in pairs ( commands ) do
 			if value.alias == command then
 				command = index
 			end
 		end
+	end]]
+
+	if not commands[command] then
+		table.foreachi (commands, function(index, value)
+			table.foreach (value.alias, function(key, value)
+				if value == command then
+					command = index
+				end
+			end)
+
+			if value.alias == command then
+				command = index
+			end
+		end)
 	end
 
 	if commands[command].needs_player then
