@@ -859,9 +859,9 @@ addcmd ('esp', {
 			local box = Instance.new ('BoxHandleAdornment')
 			box.AlwaysOnTop = true
 			box.Parent = object
-			box.ZIndex = math.huge
+			box.ZIndex = 10
 			box.Adornee = object
-			box.Size = object.Size + Vector3.one
+			box.Size = object.Size + Vector3.new (0.1,0.1,0.1)
 			table.insert (commands.esp.parts, box)
 			return box
 		end
@@ -896,6 +896,62 @@ addcmd ('unesp', {
 	end
 })
 
+addcmd ('xray', {
+	['needs_player'] = false,
+	['connections'] =  {},
+	['parts'] = {},
+	['func'] = function()
+		for index, value in ipairs (workspace:GetDescendants()) do
+			if value:IsA('BasePart') then
+				table.insert(commands.xray.parts, value)
+				value.Transparency = 0.5
+			end
+		end
+
+		table.insert(commands.xray.connections,workspace.DescendantAdded:Connect(function(descendant)
+			if descendant:IsA'BasePart' then
+				descendant.Transparency = 0.5
+			end
+		end))
+	end
+})
+
+addcmd ('unxray', {
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.xray.parts) do
+			value:Destroy()
+			value = nil
+		end
+
+		for index, value in ipairs (commands.xray.connections) do
+			value:Disconnect()
+		end
+	end
+})
+
+-- not real backtracking, consider storing the player position every frame with RenderStepped then creating a new
+-- object with the stored position ( possibly laggy after some time, consider using Debris:AddItem)
+addcmd ('backtrack', {
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		local number = tonumber(imtable[1])
+		game:GetService'NetworkSettings'.IncomingReplicationLag = number
+	end
+})
+
+addcmd ('addplugin', {
+	['alias'] = {'plugin'},
+	['needs_player'] = false,
+	['plugins'] = {},
+	['func'] = function(imtable: table)
+		local fileName: string = imtable[1]
+		local plugin: table = loadfile (fileName)() -- returns a table
+		commands[plugin.Name] = plugin.Properties
+		table.insert (commands.addplugin.plugins, plugin)
+	end
+})
+
 -- part: Instance, step: number
 function predictstep (...): CFrame
 	local args = {...}
@@ -907,9 +963,9 @@ function predictstep (...): CFrame
 	local currentposition: Vector3 = part.Position
 	local currentvelocity: Vector3 = part.AssemblyLinearVelocity or Vector3.zero
 
-	local currentorientation = part.Orientation
+	local currentorientation: Vector3 = part.Orientation
 
-	-- i currently dont know how to calculate acceleration on ROBLOX; with a = (initialVelocity - finalVelocity) / predicted time, it should work but doesn't
+	-- i currently dont know how to calculate acceleration on ROBLOX; with acceleration = (initialVelocity - finalVelocity) / time, it should work but doesn't
 
 	-- formula: position + (acceleration/2) * step * gravity * step
 	local predictedstep = CFrame.new ( (currentposition + (currentvelocity/2) * step * workspace.Gravity * step), currentorientation )
@@ -1038,7 +1094,7 @@ local function runcmd (cmd: string)
 	if commands[command].needs_player then
 		-- returns the player name and the instance
 		local playername, playerobj = findplayer (list[2])
-		
+
 		-- [1] table with the name(s)
 		-- [2] table with all the instances
 		-- [3] the rest of the argument
