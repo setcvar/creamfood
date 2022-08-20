@@ -946,8 +946,10 @@ addcmd ('plugin', {
 	['func'] = function(imtable: table)
 		local fileName: string = imtable[1]
 		local plugin: table = loadfile (fileName)() -- returns a table
-		commands[plugin.Name] = plugin.Properties
-		table.insert (commands.addplugin.plugins, plugin)
+		for index, value in ipairs (plugin) do
+			commands[value.Name] = value.Properties
+			table.insert (commands.addplugin.plugins, plugin)
+		end
 	end
 })
 
@@ -969,7 +971,7 @@ addcmd ('removeplugin', {
 function predictstep (...): CFrame
 	local args = {...}
 
-	local part: Instance = args[1]
+	local part: any = args[1]
 
 	local step: number = args[2] or 0
 
