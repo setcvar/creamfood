@@ -40,4 +40,6 @@ module.example2.Properties = {
         end
     end
 }
+
+return module
 ```
