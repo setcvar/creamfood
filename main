@@ -948,8 +948,8 @@ addcmd ('plugin', {
 		local plugin: table = loadfile (fileName)() -- returns a table
 		for index, value in ipairs (plugin) do
 			commands[value.Name] = value.Properties
-			table.insert (commands.addplugin.plugins, plugin)
 		end
+		table.insert (commands.addplugin.plugins, plugin)
 	end
 })
 
