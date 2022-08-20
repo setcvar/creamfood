@@ -22,7 +22,6 @@ local PLAYERS: Players = game:GetService ("Players")
 local LOCALPLAYER: Player = PLAYERS.LocalPlayer
 local CHARACTER: Model = LOCALPLAYER.Character or LOCALPLAYER.CharacterAdded:Wait()
 local GUI: ScreenGui
---local NEWOBJ = Instance.new
 -- constants
 
 game.Players.LocalPlayer.CharacterAdded:Connect(function()
@@ -940,8 +939,8 @@ addcmd ('backtrack', {
 	end
 })
 
-addcmd ('addplugin', {
-	['alias'] = {'plugin'},
+addcmd ('plugin', {
+	['alias'] = {'addplugin'},
 	['needs_player'] = false,
 	['plugins'] = {},
 	['func'] = function(imtable: table)
@@ -949,6 +948,20 @@ addcmd ('addplugin', {
 		local plugin: table = loadfile (fileName)() -- returns a table
 		commands[plugin.Name] = plugin.Properties
 		table.insert (commands.addplugin.plugins, plugin)
+	end
+})
+
+addcmd ('removeplugin', {
+	['alias'] = {'rmplugin'},
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		local name = imtable[1]
+		for index, value in ipairs (commands.plugin.plugins) do
+			if value.Name == name then
+				commands[value.Name] = nil
+				table.remove (commands.plugin.plugins, index)
+			end
+		end
 	end
 })
 
