@@ -839,7 +839,7 @@ addcmd ('antitp', {
 	['func'] = function()
 		commands.antitp.position = CHARACTER.HumanoidRootPart.Position
 		table.insert (commands.antitp.events, game:GetService('RunService').Heartbeat:Connect(function()
-			if commands.antitp.position.Magnitude - CHARACTER.HumanoidRootPart.Position.Magnitude > 100 then
+			if (commands.antitp.position - CHARACTER.HumanoidRootPart.Position).Magnitude >= 40 then
 				CHARACTER.HumanoidRootPart.Position = commands.antitp.position
 			else
 				commands.antitp.position = CHARACTER.HumanoidRootPart.Position
@@ -859,18 +859,28 @@ addcmd ('esp', {
 			box.AlwaysOnTop = true
 			box.Parent = object
 			box.ZIndex = 10
+			box.Transparency = 0.5
 			box.Adornee = object
-			box.Size = object.Size + Vector3.new (0.1,0.1,0.1)
+			box.Size = object.Size
 			table.insert (commands.esp.parts, box)
 			return box
 		end
 		table.foreach (PLAYERS:GetPlayers(), function(key, value)
-			CreateBox (value.Character.HumanoidRootPart)
+			for index, player in ipairs (value.Character:GetDescendants()) do
+				if player.Name == 'Torso' then continue end
+				if player:IsA'BasePart' then
+					CreateBox (player)
+				end
+			end
 		end)
 
-		table.insert(commands.esp.events, game.Players.PlayerAdded:Connect(function(player: Player)
-			player.CharacterAdded:Connect(function(character: Model)
-				CreateBox (character.HumanoidRootPart)
+		table.insert (commands.esp.events, PLAYERS.PlayerAdded:Connect(function(player)
+			player.CharacterAdded:Connect(function(character)
+				for index, value in ipairs (character:GetDescendants()) do
+					if value:IsA'BasePart' and value.Name ~= 'Torso' then
+						CreateBox (value)
+					end
+				end
 			end)
 		end))
 	end
@@ -919,8 +929,7 @@ addcmd ('unxray', {
 	['needs_player'] = false,
 	['func'] = function()
 		for index, value in ipairs (commands.xray.parts) do
-			value:Destroy()
-			value = nil
+			value.Transparency = 0
 		end
 
 		for index, value in ipairs (commands.xray.connections) do
@@ -949,7 +958,7 @@ addcmd ('plugin', {
 		for index, value in ipairs (plugin) do
 			commands[value.Name] = value.Properties
 		end
-		table.insert (commands.addplugin.plugins, plugin)
+		table.insert (commands.plugin.plugins, plugin)
 	end
 })
 
@@ -961,7 +970,6 @@ addcmd ('removeplugin', {
 		for index, value in ipairs (commands.plugin.plugins) do
 			if value.Name == name then
 				commands[value.Name] = nil
-				table.remove (commands.plugin.plugins, index)
 			end
 		end
 	end
@@ -1072,7 +1080,7 @@ local function findplayer (playername: string): table
 	return name, obj
 end
 
-local function runcmd (cmd: string)
+local function runcmd (cmd: string): boolean
 	local list = {}
 
 	for word in string.gmatch (cmd, "%g+") do
