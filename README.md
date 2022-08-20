@@ -5,9 +5,9 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/GTX1O8OTi/creamfood/m
 
 the table passed as a argument to the function is a table
 
-if the command requires no player(s) (needs_player = false) then imtable[1] will be a string with the rest of the text
+if the command requires no player(s) (needs_player = false) then argument[1] will be a string with the rest of the text
 
-if the command requires player(s) (needs_player = true) then imtable[1] will be a table with the names, imtable[2] will be a table with all the player instances, and imtable[3] the rest of the text if needed
+if the command requires player(s) (needs_player = true) then argument[1] will be a table with the names, argument[2] will be a table with all the player instances, and argument[3] the rest of the text if needed
 
 Example of plugin:
 ```lua
