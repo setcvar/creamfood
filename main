@@ -1062,7 +1062,8 @@ local function findplayer (playername: string): table
 	end
 
 	for index, value in ipairs (PLAYERS:GetPlayers()) do
-		if string.lower (value.DisplayName):match ("^" .. string.lower(playername)) then
+		if string.lower (value.DisplayName):match ("^" .. string.lower(playername)) or
+		string.lower(value.Character.Humanoid.DisplayName):match("^" .. string.lower(playername)) then
 			table.insert (name, value.Name)
 			table.insert (obj,value)
 		end
