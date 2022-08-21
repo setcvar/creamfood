@@ -20,14 +20,14 @@ local commands = {}
 -- constants
 local PLAYERS: Players = game:GetService ("Players")
 local LOCALPLAYER: Player = PLAYERS.LocalPlayer
-local CHARACTER: Model = LOCALPLAYER.Character or LOCALPLAYER.CharacterAdded:Wait()
+local CHARACTER = LOCALPLAYER.Character or LOCALPLAYER.CharacterAdded:Wait()
 local GUI: ScreenGui
 -- constants
 
-game.Players.LocalPlayer.CharacterAdded:Connect(function()
+game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
 	PLAYERS = game:GetService ("Players")
 	LOCALPLAYER = PLAYERS.LocalPlayer
-	CHARACTER = LOCALPLAYER.Character or LOCALPLAYER.CharacterAdded:Wait()
+	CHARACTER = character
 end)
 
 -- properties can be anything you want, just be sure that it has at least ['func'] or ["func"]
@@ -37,9 +37,8 @@ end
 
 addcmd ("print", {
 	['needs_player'] = false,
-	['func'] = function(hiimatext)
-		local text = hiimatext[1]
-		print(text)
+	['func'] = function(hiimatext: table)
+		print(hiimatext.text)
 	end,
 	['alias'] = 'p',
 })
@@ -47,28 +46,26 @@ addcmd ("print", {
 addcmd ('speed', {
 	['needs_player'] = false,
 	['alias'] = 'ws',
-	['func'] = function( imtext )
-		local number = tonumber (imtext[1])
-		CHARACTER.Humanoid.WalkSpeed = number
+	['func'] = function( imtable: table )
+		CHARACTER.Humanoid.WalkSpeed = tonumber(imtable.text)
 	end
 })
 
 addcmd ('jumppower',{
 	['alias'] = 'jp',
 	['needs_player'] = false,
-	['func'] = function(imtext: string)
-		local number = tonumber (imtext[1])
-		CHARACTER.Humanoid.JumpPower = number
+	['func'] = function(imtable: table)
+		CHARACTER.Humanoid.JumpPower = tonumber(imtable.text)
 	end
 })
 
 addcmd ('maxfps', {
 	['alias'] = nil,
 	['needs_player'] = false,
-	['func'] = function (imtext: string)
+	['func'] = function (imtable: table)
 		local setmaxfps = setmaxfps or set_fps_cap or setfpscap
 		if setmaxfps then
-			local number = imtext[1]
+			local number = tonumber(imtable.text)
 			setmaxfps(number)
 		end
 	end
@@ -102,10 +99,10 @@ addcmd ('spin', {
 	['alias'] = 'angularvelocity',
 	['needs_player'] = false,
 	['events'] = {},
-	['func'] = function(imtext: number)
+	['func'] = function(imtable: table)
 		local bav = Instance.new ('BodyAngularVelocity')
 		bav.Parent = CHARACTER.HumanoidRootPart or CHARACTER:WaitForChild ('HumanoidRootPart')
-		bav.AngularVelocity = Vector3.new (0, tonumber(imtext[1]), 0)
+		bav.AngularVelocity = Vector3.new (0, tonumber(imtable.text), 0)
 		bav.MaxTorque = Vector3.new (0, math.huge, 0)
 		table.insert(commands.spin.events, bav)
 	end
@@ -137,9 +134,9 @@ addcmd ('rejoin', {
 
 addcmd ('loadfile', {
 	['needs_player'] = false,
-	['func'] = function(imtext): string
+	['func'] = function(imtable: table)
 		if loadfile then
-			loadfile(imtext[1])()
+			loadfile(imtable.text)()
 		end
 	end
 })
@@ -147,8 +144,8 @@ addcmd ('loadfile', {
 addcmd ('runcode', {
 	['alias'] = 'rc',
 	['needs_player'] = false,
-	['func'] = function (imtext:table): string
-		loadstring (imtext[1])()
+	['func'] = function (imtable:table): string
+		loadstring (imtable.text)()
 	end
 })
 
@@ -262,8 +259,8 @@ addcmd ('rainbow', {
 addcmd ('notify', {
 	['needs_player'] = false,
 	['alias'] = 'fakechat',
-	['func'] = function(imtext: table)
-		Notify (imtext[1])
+	['func'] = function(imtable: table)
+		Notify (imtable.text)
 	end
 })
 
@@ -271,7 +268,9 @@ addcmd ('goto', {
 	['alias'] = 'to',
 	['needs_player'] = true,
 	['func'] = function(imtable: table)
-		CHARACTER.HumanoidRootPart.CFrame = imtable[2][1].Character.HumanoidRootPart.CFrame
+		for index, value in ipairs (imtable.playerobjects) do
+			CHARACTER.HumanoidRootPart.CFrame = value.Character.HumanoidRootPart.CFrame
+		end
 	end
 })
 
@@ -289,12 +288,15 @@ addcmd ('firecds', {
 
 addcmd ('view', {
 	['needs_player'] = true,
+	['connections'] = {},
 	['func'] = function (imtable: table)
-		workspace.CurrentCamera.CameraSubject = imtable[2][1].Character.Humanoid
-
-		imtable[2][1].Charcter.Humanoid.Died:Connect(function()
-			workspace.CurrentCamera.CameraSubject = LOCALPLAYER.Character.Humanoid
-		end)
+		for index, value in ipairs (imtable.playerobjects) do
+			workspace.CurrentCamera.CameraSubject = value.Character.Humanoid
+			
+			table.insert(commands.view.connections, value.Character.Humanoid.Died:Connect(function()
+				workspace.CurrentCamera.CameraSubject = LOCALPLAYER.Character.Humanoid
+			end))
+		end
 	end
 })
 
@@ -346,7 +348,7 @@ addcmd ('makewaypoint', {
 	['needs_player'] = false,
 	['func'] = function(imtable: table)
 		local currentCFrame = CHARACTER.HumanoidRootPart.CFrame
-		commands.makewaypoint.waypoints[imtable[1]] = currentCFrame
+		commands.makewaypoint.waypoints[imtable.text] = currentCFrame
 		-- make garbage collector free it
 		currentCFrame = nil
 	end
@@ -357,7 +359,7 @@ addcmd ('gotowaypoint', {
 	['needs_player'] = false,
 	['func'] = function(imtable)
 		table.foreach (commands.makewaypoint.waypoints, function(key, value)
-			if key == imtable[1] then
+			if key == imtable.text then
 				CHARACTER.HumanoidRootPart.CFrame = value
 			end
 		end)
@@ -369,7 +371,7 @@ addcmd ('removewaypoint', {
 	['needs_player'] = false,
 	['func'] = function(imtable)
 		local waypoints: table = commands.makewaypoint.waypoints
-		waypoints[imtable[1]] = nil
+		waypoints[imtable.text] = nil
 	end
 })
 
@@ -385,7 +387,7 @@ addcmd ('pathtowaypoint', {
 			AgentHeight = 5.0,
 			AgentCanJump = true,
 		})
-		local wp = commands.makewaypoint.waypoints[imtable[1]].Position
+		local wp = commands.makewaypoint.waypoints[imtable.text].Position
 		local points
 		local success, result = pcall (function()path:ComputeAsync(CHARACTER.HumanoidRootPart.Position, wp )end)
 
@@ -445,7 +447,7 @@ addcmd ('hipheight', {
 	['alias'] = 'hh',
 	['needs_player'] = false,
 	['func'] = function(imtable)
-		CHARACTER.Humanoid.HipHeight = tonumber(imtable[1])
+		CHARACTER.Humanoid.HipHeight = tonumber(imtable.text)
 	end
 })
 
@@ -573,8 +575,8 @@ addcmd ('freeze', {
 	['needs_player'] = true,
 	['parts'] = {},
 	['func'] = function (imtable: table)
-		local playernames = imtable[1]
-		local playerobjs = imtable[2]
+		local playernames = imtable.playernames
+		local playerobjs = imtable.playerobjects
 
 		for index, value in ipairs (playerobjs) do
 
@@ -605,8 +607,8 @@ addcmd ('predict', {
 	['connections'] = {},
 	['parts'] = {},
 	['func'] = function(imtable: table)
-		local playernames = imtable[1]
-		local playerobjs = imtable[2]
+		local playernames = imtable.playernames
+		local playerobjs = imtable.playerobjects
 
 		for useless, player in ipairs (playerobjs) do
 			
@@ -647,7 +649,7 @@ addcmd ('gravity', {
 	['alias'] = 'grav',
 	['needs_player'] = false,
 	['func'] = function (imtable: table)
-		game:GetService'Workspace'.Gravity = tonumber(imtable[1])
+		game:GetService'Workspace'.Gravity = tonumber(imtable.text)
 	end
 })
 
@@ -655,7 +657,7 @@ addcmd ('fov', {
 	['alias'] = 'changefov',
 	['needs_player'] = false,
 	['func'] = function(imtable: table)
-		workspace.CurrentCamera.FieldOfView = tonumber (imtable[1])
+		workspace.CurrentCamera.FieldOfView = tonumber (imtable.text)
 	end
 })
 
@@ -667,7 +669,7 @@ addcmd ('spam', {
 		commands.spam.events.spamvar = true
 		while commands.spam.events.spamvar do
 			wait(3)
-			game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer (imtable[1], 'All')
+			game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer (imtable.text, 'All')
 		end
 	end
 })
@@ -690,7 +692,7 @@ addcmd ('pmspam', {
 		for index, value in ipairs (playername) do
 			while commands.pmspam.events.spamvar do
 				wait(3)
-				game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer (imtable[1], value)
+				game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer (imtable.text, value)
 			end
 		end
 	end
@@ -709,8 +711,8 @@ addcmd ('walkto', {
 	['needs_player'] = true,
 	['events'] = {},
 	['func'] = function(imtable: table)
-		local playernames = imtable[1]
-		local playerobjs = imtable[2]
+		local playernames = imtable.playernames
+		local playerobjs = imtable.playerobjects
 		
 		local pathfinding = game:GetService'PathfindingService'
 		local path = pathfinding:CreatePath({
@@ -789,7 +791,7 @@ addcmd ('shiftspeed', {
 	['events'] = {},
 	['func'] = function(imtable: table)
 		commands.shiftspeed.events.speed = CHARACTER.Humanoid.WalkSpeed
-		local number = tonumber(imtable[1])
+		local number = tonumber(imtable.text)
 		game:GetService('ContextActionService'):BindAction(
 			'ILIKECHEESE',
 			function(actionname, inputstate, inputobject)
@@ -829,22 +831,7 @@ addcmd ('rmcmd', {
 	['alias'] = 'removecmd',
 	['needs_player'] = false,
 	['func'] = function(imtable: table)
-		commands[imtable[1]] = nil
-	end
-})
-
-addcmd ('antitp', {
-	['needs_player'] = false,
-	['events'] = {},
-	['func'] = function()
-		commands.antitp.position = CHARACTER.HumanoidRootPart.Position
-		table.insert (commands.antitp.events, game:GetService('RunService').Heartbeat:Connect(function()
-			if (commands.antitp.position - CHARACTER.HumanoidRootPart.Position).Magnitude >= 40 then
-				CHARACTER.HumanoidRootPart.Position = commands.antitp.position
-			else
-				commands.antitp.position = CHARACTER.HumanoidRootPart.Position
-			end
-		end))
+		commands[imtable.text] = nil
 	end
 })
 
@@ -943,7 +930,7 @@ addcmd ('unxray', {
 addcmd ('backtrack', {
 	['needs_player'] = false,
 	['func'] = function(imtable: table)
-		local number = tonumber(imtable[1])
+		local number = tonumber(imtable.text)
 		game:GetService'NetworkSettings'.IncomingReplicationLag = number
 	end
 })
@@ -953,7 +940,7 @@ addcmd ('plugin', {
 	['needs_player'] = false,
 	['plugins'] = {},
 	['func'] = function(imtable: table)
-		local fileName: string = imtable[1]
+		local fileName: string = imtable.text
 		local plugin: table = loadfile (fileName)() -- returns a table
 		for index, value in ipairs (plugin) do
 			commands[value.Name] = value.Properties
@@ -966,12 +953,109 @@ addcmd ('removeplugin', {
 	['alias'] = {'rmplugin'},
 	['needs_player'] = false,
 	['func'] = function(imtable: table)
-		local name = imtable[1]
+		local name = imtable.text
 		for index, value in ipairs (commands.plugin.plugins) do
 			if value.Name == name then
 				commands[value.Name] = nil
 			end
 		end
+	end
+})
+
+addcmd ('fog', {
+	['alias'] = 'setfog',
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		local number = tonumber(imtable.text)
+		game.Lighting.FogStart = number
+	end
+})
+
+addcmd ('copyname', {
+	['alias'] = {'copyplayername'},
+	['needs_player'] = true,
+	['func'] = function(imtable: table)
+		local playernames = imtable.playernames
+		if #playernames == 1 then
+			setclipboard (playernames[1])
+		else
+			setclipboard (table.concat(playernames,', '))
+		end
+	end
+})
+
+addcmd ('slopeangle', {
+	['alias'] = {'maxslopeangle'},
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		local number = tonumber(imtable.text)
+		CHARACTER.Humanoid.MaxSlopeAngle = number
+	end
+})
+
+addcmd ('tpdir', {
+	['alias'] = {},
+	['needs_player'] = false,
+	['events'] = {},
+	['func'] = function()
+		table.insert(commands.tpdir.events, game:GetService('RunService').RenderStepped:Connect(function()
+			CHARACTER.HumanoidRootPart.CFrame += CHARACTER.Humanoid.MoveDirection
+		end))
+	end
+})
+
+addcmd ('untpdir', {
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.tpdir.events) do
+			value:Disconnect()
+		end
+	end
+})
+
+addcmd ('freezeunanchored', {
+	['alias'] = {'freezeua'},
+	['needs_player'] = false,
+	['parts'] = {},
+	['func'] = function()
+		for index, value in ipairs (workspace:GetDescendants()) do
+			if value:IsA('BasePart') and value.Anchored == false then
+				value.Anchored = true
+				table.insert(commands.freezeunanchored.parts, value)
+			end
+		end
+	end
+})
+
+addcmd ('thawua', {
+	['alias'] = {'thawua'},
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.freezeunanchored.parts) do
+			value.Anchored = false
+		end
+	end
+})
+
+addcmd ('joinlogs', {
+	['alias'] = {},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		table.insert (commands.joinlogs.connections, PLAYERS.PlayerAdded:Connect(function(player)
+			Notify (player.Name .. ' joined', Color3.new(0, 1, 0.368627))
+		end))
+	end
+})
+
+addcmd ('leavelogs', {
+	['alias'] = {'exitlogs', 'quitlogs'},
+	['needs_player'] = false,
+	['connections'] = {},
+	['func'] = function()
+		table.insert (commands.leavelogs.connections, PLAYERS.PlayerRemoving:Connect(function(player)
+			Notify (player.Name .. ' left', Color3.new(0.615686, 0, 0))
+		end))
 	end
 })
 
@@ -1115,17 +1199,22 @@ local function runcmd (cmd: string): boolean
 		end)
 	end
 
-	if commands[command].needs_player then
+	if commands[command].needs_player == true then
 		-- returns the player name and the instance
-		local playername, playerobj = findplayer (list[2])
+		--local playername, playerobj = findplayer (list[2])
+
+		arguments.playernames,arguments.playerobjects = findplayer(list[2])
+		arguments.text = table.concat(list, ' ', 3)
 
 		-- [1] table with the name(s)
 		-- [2] table with all the instances
 		-- [3] the rest of the argument
-		arguments = {playername, playerobj, table.concat(list, " ", 3)}
+		--arguments = {playername, playerobj, table.concat(list, " ", 3)}
 	else
+
+		arguments.text = table.concat (list, ' ', 2)
 		-- [1] table with the rest of the string
-		arguments = {table.concat(list, " ", 2)}
+		--arguments = {table.concat(list, " ", 2)}
 	end
 
 	local success, result = pcall ( coroutine.wrap (function ()
