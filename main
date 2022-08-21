@@ -1177,18 +1177,21 @@ local function runcmd (cmd: string): boolean
 
 	-- if the command is not on the table commands
 	-- make a loop to see if it is on the alias table
-	--[[if not commands[command] then
-		for index, value in pairs ( commands ) do
-			if value.alias == command then
-				command = index
-			end
-		end
-	end]]
-
 	if not commands[command] then
+        for key, value in pairs (commands) do
+            if typeof (value.alias) == 'table' then
+                    for index, val in ipairs (value.alias) do
+                    if val == command then command = index end
+                end
+            end
+
+            if typeof(value.alias) == 'string' then
+                if value.alias == command then command = key end
+            end
+        end
 		table.foreachi (commands, function(index, value)
-			table.foreach (value.alias, function(key, value)
-				if value == command then
+			table.foreach (value.alias, function(key, val)
+				if val == command then
 					command = index
 				end
 			end)
@@ -1199,23 +1202,16 @@ local function runcmd (cmd: string): boolean
 		end)
 	end
 
-	if commands[command].needs_player == true then
-		-- returns the player name and the instance
-		--local playername, playerobj = findplayer (list[2])
+    if not commands[command] then return end
 
-		arguments.playernames,arguments.playerobjects = findplayer(list[2])
-		arguments.text = table.concat(list, ' ', 3)
-
-		-- [1] table with the name(s)
-		-- [2] table with all the instances
-		-- [3] the rest of the argument
-		--arguments = {playername, playerobj, table.concat(list, " ", 3)}
-	else
-
-		arguments.text = table.concat (list, ' ', 2)
-		-- [1] table with the rest of the string
-		--arguments = {table.concat(list, " ", 2)}
-	end
+    for key, value in pairs (commands[command]) do
+        if key == 'needs_player' and value == true then
+            	    arguments.playernames,arguments.playerobjects = findplayer(list[2])
+		    arguments.text = table.concat(list, ' ', 3)
+            else
+            	    arguments.text = table.concat (list, ' ', 2)
+        end
+    end
 
 	local success, result = pcall ( coroutine.wrap (function ()
 		-- run the command with 'arguments' being a table
@@ -1255,55 +1251,6 @@ TextBox.PlaceholderText = "cmds"
 TextBox.TextColor3 = Color3.fromRGB (255,255,255)
 TextBox.Text = ""
 
---[[local cmdgui = Instance.new("ScreenGui")
-local Frame = Instance.new("Frame")
-local cmdlist = Instance.new("ScrollingFrame")
-local exampleframe = Instance.new("Frame")
-local examplelabel = Instance.new("TextLabel")
-
-cmdgui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-cmdgui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-Frame.Parent = cmdgui
-Frame.BackgroundColor3 = Color3.fromRGB(98, 220, 184)
-Frame.BorderSizePixel = 0
-Frame.Position = UDim2.new(0, cmdgui.AbsoluteSize.X-240, 0, cmdgui.AbsoluteSize.Y-224)
-Frame.Size = UDim2.new(0, 236, 0, 222)
-
-cmdlist.Parent = Frame
-
-cmdlist.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-cmdlist.BorderSizePixel = 0
-cmdlist.Size = UDim2.new(0, 236, 0, 220)
-cmdlist.ScrollBarThickness = 5
-cmdlist.AutomaticCanvasSize = Enum.AutomaticSize.Y
-
-local lastpos = UDim2.new(0,5,0,-23)
-local function createcommand (text)
-
-	local exampleframe = Instance.new ('Frame')
-	exampleframe.Name = "exampleframe"
-	exampleframe.Parent = cmdlist
-	exampleframe.BackgroundColor3 = Color3.fromRGB(98, 220, 184)
-	exampleframe.BorderSizePixel = 0
-	exampleframe.Size = UDim2.new(0, 218, 0, 23)
-	exampleframe.Position = lastpos + UDim2.fromOffset (0,30)
-	lastpos = exampleframe.Position
-
-	local examplelabel = Instance.new ('TextLabel')
-	examplelabel.Name = "examplelabel"
-	examplelabel.Parent = exampleframe
-	examplelabel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-	examplelabel.BorderSizePixel = 0
-	examplelabel.Size = UDim2.new(1, 0, 0, 22)
-	examplelabel.Font = Enum.Font.SourceSans
-	examplelabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	examplelabel.TextSize = 18
-	examplelabel.TextWrapped = true
-	examplelabel.Text = text
-	return exampleframe
-end]]
-
 game:GetService ("ContextActionService"):BindAction (
 	"Focus",
 	function()
@@ -1324,13 +1271,5 @@ TextBox.FocusLost:Connect (
 		end
 	end
 )
-
---[[table.foreach(commands, function(key, value)
-	if value.alias then
-		createcommand(key .. ': ' .. value.alias)
-	else
-		createcommand (key)
-	end
-end)]]
 
 Notify ('Use F9 to view commands for now')
