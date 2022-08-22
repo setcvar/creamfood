@@ -1,5 +1,13 @@
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/GTX1O8OTi/creamfood/main/main")) ()
+--[[
+    Creamfood
+    by navet
+
+    join the discord server
+    discord.gg/uqhDdceHW9
+]]
+local load = loadstring;
+load(game:HttpGet('https://raw.githubusercontent.com/GTX1O8OTi/creamfood/main/main'))()
 ```
 !! If you're going to make a plugin, be sure to include at least a function !!
 
