@@ -1054,8 +1054,48 @@ addcmd ('leavelogs', {
 	['connections'] = {},
 	['func'] = function()
 		table.insert (commands.leavelogs.connections, PLAYERS.PlayerRemoving:Connect(function(player)
-			Notify (player.Name .. ' left', Color3.new(0.615686, 0, 0))
+			Notify (player.Name .. ' left', Color3.new(0.721568, 0, 0))
 		end))
+	end
+})
+
+addcmd ('friendlogs', {
+	['alias'] = {},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		table.insert (commands.friendlogs.connections, PLAYERS.PlayerAdded:Connect(function(player)
+			if player:IsFriendsWith(LOCALPLAYER.UserId) then
+				Notify (player.Name .. ' joined', Color3.new(0, 0.898039, 1))
+			end
+		end))
+	end
+})
+
+addcmd ('whisperlogs', {
+	['alias'] = {},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		local chatevents = game.ReplicatedStorage:WaitForChild ("DefaultChatSystemChatEvents", math.huge)
+		local messageevent = chatevents:WaitForChild ("OnMessageDoneFiltering", math.huge).OnClientEvent:Connect (function(data)
+			if data ~= nil then
+				local player = tostring (data.FromSpeaker)
+				local message = tostring (data.Message)
+				local channel = tostring (data.OriginalChannel)
+				
+				if string.find (channel, "To ") then
+					message = "/w " .. string.gsub (channel, "To", "") .. message
+					Notify (player..message, Color3.new(0.674509, 0.368627, 1))
+				end
+	
+				if channel == "Team" then
+					message = "/team " .. message
+					Notify ('['..player..']: '.. message, Color3.new(0.662745, 0.345098, 1))
+				end
+	
+			end
+		end)
 	end
 })
 
