@@ -852,13 +852,36 @@ addcmd ('esp', {
 			table.insert (commands.esp.parts, box)
 			return box
 		end
+
 		table.foreach (PLAYERS:GetPlayers(), function(key, value)
-			for index, player in ipairs (value.Character:GetDescendants()) do
+			for useless, player in ipairs (value.Character:GetDescendants()) do
 				if player.Name == 'Torso' then continue end
 				if player:IsA'BasePart' then
 					CreateBox (player)
 				end
 			end
+
+			-- extremely inefficient and can lag on lower end devices, rewrite it later
+			value:GetPropertyChangedSignal('TeamColor'):Connect(function()
+				for key, object in pairs (commands.esp.events) do
+					object:Destroy()
+				end
+
+				local character = value.Character or value.CharacterAdded:Wait()
+				for _, object in pairs (character:GetDescendants()) do
+					if object:IsA'BasePart' then
+						CreateBox (object)
+					end
+				end
+			end)
+
+			table.insert(commands.esp.events, value.CharacterAdded:Connect(function(character)
+				for useless, val in ipairs (character:GetDescendants()) do
+					if val:IsA'BasePart' then
+						CreateBox (val)
+					end
+				end
+			end))
 		end)
 
 		table.insert (commands.esp.events, PLAYERS.PlayerAdded:Connect(function(player)
@@ -1048,6 +1071,18 @@ addcmd ('joinlogs', {
 	end
 })
 
+addcmd ('unjoinlogs', {
+	['alias'] = {},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		for key, value in pairs (commands.joinlogs.connections) do
+			value:Disconnect()
+		end
+		table.clear(commands.joinlogs.connections)
+	end
+})
+
 addcmd ('leavelogs', {
 	['alias'] = {'exitlogs', 'quitlogs'},
 	['needs_player'] = false,
@@ -1058,6 +1093,19 @@ addcmd ('leavelogs', {
 		end))
 	end
 })
+
+addcmd ('unleavelogs', {
+	['alias'] = {'unexitlogs','unquitlogs'},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		for key, value in pairs (commands.leavelogs.connections) do
+			value:Disconnect()
+		end
+		table.clear(commands.leavelogs.connections)
+	end
+})
+
 
 addcmd ('friendlogs', {
 	['alias'] = {},
@@ -1072,13 +1120,25 @@ addcmd ('friendlogs', {
 	end
 })
 
+addcmd ('unfriendlogs', {
+	['alias'] = {},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		for key, value in pairs (commands.friedlogs.connections) do
+			value:Disconnect()
+		end
+		table.clear(commands.friendlogs.connections)
+	end
+})
+
 addcmd ('whisperlogs', {
 	['alias'] = {},
 	['connections'] = {},
 	['needs_player'] = false,
 	['func'] = function()
 		local chatevents = game.ReplicatedStorage:WaitForChild ("DefaultChatSystemChatEvents", math.huge)
-		local messageevent = chatevents:WaitForChild ("OnMessageDoneFiltering", math.huge).OnClientEvent:Connect (function(data)
+		table.insert(commands.whisperlogs.connections,chatevents:WaitForChild ("OnMessageDoneFiltering", math.huge).OnClientEvent:Connect (function(data)
 			if data ~= nil then
 				local player = tostring (data.FromSpeaker)
 				local message = tostring (data.Message)
@@ -1095,7 +1155,28 @@ addcmd ('whisperlogs', {
 				end
 	
 			end
-		end)
+		end))
+	end
+})
+
+addcmd ('unwhisperlogs', {
+	['alias'] = {},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		for key, value in pairs (commands.whisperlogs.connections) do
+			value:Disconnect()
+		end
+		table.clear(commands.whisperlogs.connections)
+	end
+})
+
+addcmd ('tptocamera', {
+	['alias'] = {'gotocamera'},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		CHARACTER.HumanoidRootPart.CFrame = workspace.CurrentCamera.CFrame
 	end
 })
 
@@ -1150,7 +1231,8 @@ local function findplayer (playername: string): table
 		-- get all players
 		local getplayers = PLAYERS:GetPlayers()
 		-- use math.random to select a random index starting from 1 to the length of getplayers
-		local player = getplayers[math.random(1,#getplayers)]
+		local random_index = math.random(1,#getplayers)
+		local player = getplayers[random_index]
 		table.insert (name, player.Name)
 		table.insert (obj, player)
 		plrnm = nil
@@ -1220,7 +1302,7 @@ local function runcmd (cmd: string): boolean
 	if not commands[command] then
         for key, value in pairs (commands) do
             if typeof (value.alias) == 'table' then
-                    for index, val in ipairs (value.alias) do
+                    for index, val in pairs (value.alias) do
                     if val == command then command = index end
                 end
             end
