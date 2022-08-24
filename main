@@ -1199,39 +1199,6 @@ addcmd ('notifyage', {
 	end
 })
 
-addcmd ('highlight', {
-	['alias'] = 'shaderesp',
-	['needs_player'] = false,
-	['parts'] = {},
-	['func'] = function(imtable: table)
-
-		local function highlightobj (object: any, color)
-			local highlight = Instance.new ('Highlight')
-			highlight.Parent = object
-			highlight.Adornee = object
-			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-			highlight.FillTransparency = 1
-			highlight.OutlineTransparency = 0
-			highlight.OutlineColor = color
-			highlight.Enabled = true
-		end
-
-		for player_key, player in pairs (game.Players:GetPlayers()) do
-			local character = player:WaitForChild('Character', math.huge)
-			local humanoid = character:WaitForChild('Humanoid', math.huge)
-			if character and humanoid then
-				
-				for index, object in pairs (character:GetDescendants()) do
-					if object:IsA'BasePart' then
-						highlightobj (object, Color3.fromRGB(20,20,20))
-					end
-				end
-
-			end
-		end
-	end
-})
-
 -- part: Instance, step: number
 function predictstep (...): CFrame
 	local args = {...}
