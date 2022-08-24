@@ -1180,6 +1180,58 @@ addcmd ('tptocamera', {
 	end
 })
 
+addcmd ('chatage', {
+	['needs_player'] = true,
+	['func'] = function(imtable: table)
+		local playerobjects = imtable.playerobjects
+		for key, value in pairs (playerobjects) do
+			game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer (value.Name .. ' is '.. value.AccountAge .. 'days old', 'All')
+		end
+	end
+})
+
+addcmd ('notifyage', {
+	['needs_player'] = true,
+	['func'] = function(imtable: table)
+		for key, value in pairs (imtable.playerobjects) do
+			Notify (value.Name..' is '..value.AccountAge..' days old', Color3.new(1, 0, 0.584313))
+		end
+	end
+})
+
+addcmd ('highlight', {
+	['alias'] = 'shaderesp',
+	['needs_player'] = false,
+	['parts'] = {},
+	['func'] = function(imtable: table)
+
+		local function highlightobj (object: any, color)
+			local highlight = Instance.new ('Highlight')
+			highlight.Parent = object
+			highlight.Adornee = object
+			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+			highlight.FillTransparency = 1
+			highlight.OutlineTransparency = 0
+			highlight.OutlineColor = color
+			highlight.Enabled = true
+		end
+
+		for player_key, player in pairs (game.Players:GetPlayers()) do
+			local character = player:WaitForChild('Character', math.huge)
+			local humanoid = character:WaitForChild('Humanoid', math.huge)
+			if character and humanoid then
+				
+				for index, object in pairs (character:GetDescendants()) do
+					if object:IsA'BasePart' then
+						highlightobj (object, Color3.fromRGB(20,20,20))
+					end
+				end
+
+			end
+		end
+	end
+})
+
 -- part: Instance, step: number
 function predictstep (...): CFrame
 	local args = {...}
@@ -1196,7 +1248,7 @@ function predictstep (...): CFrame
 	-- i currently dont know how to calculate acceleration on ROBLOX; with acceleration = (initialVelocity - finalVelocity) / time, it should work but doesn't
 
 	-- formula: position + (acceleration/2) * step * gravity * step
-	local predictedstep = CFrame.new ( (currentposition + (currentvelocity/2) * step * workspace.Gravity * step), currentorientation )
+	local predictedstep = CFrame.new ( (currentposition + (currentvelocity/2) * step * workspace.Gravity * step ) )
 	
 	return predictedstep
 end
@@ -1219,7 +1271,7 @@ function Notify (...)
     })
 end
 
-local function findplayer (playername: string): table
+function findplayer (playername: string): table
 	local name: table = {}
 	local obj: table = {}
 
@@ -1237,6 +1289,17 @@ local function findplayer (playername: string): table
 		table.insert (obj, player)
 		plrnm = nil
 		return name, obj
+	end
+
+	local playernames = string.split (playername, ',')
+	for key, player in pairs (PLAYERS:GetPlayers()) do
+		for index, value in pairs (playernames) do
+			if string.lower (player.Name):match ("^" .. string.lower(value)) or
+			string.lower(player.Character.Humanoid.DisplayName):match("^" .. string.lower(value)) then
+				table.insert (name, player.Name)
+				table.insert (obj, player)
+			end
+		end
 	end
 
 	-- if everyone then just return every name and instance
@@ -1328,10 +1391,10 @@ local function runcmd (cmd: string): boolean
 
     for key, value in pairs (commands[command]) do
         if key == 'needs_player' and value == true then
-            	    arguments.playernames,arguments.playerobjects = findplayer(list[2])
+            arguments.playernames,arguments.playerobjects = findplayer(list[2])
 		    arguments.text = table.concat(list, ' ', 3)
             else
-            	    arguments.text = table.concat (list, ' ', 2)
+            arguments.text = table.concat (list, ' ', 2)
         end
     end
 
