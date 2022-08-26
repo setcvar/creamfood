@@ -1,1369 +1,1399 @@
-setthreadcontext(7)
+--[[
 
-local commands: table = {}
-local alias = {}
-local events = {}
-local plugins = {}
-local command_history = {}
+example
 
-local PLAYERS = game:GetService("Players")
-local LOCALPLAYER = PLAYERS.LocalPlayer
+addcmd ("name", {
+	['needs_player'] = true or false
+	['func'] = function,
+	['alias'] = 'yeet',
+	['parts'] = {},
+	['events'] = {},
+	['connections'] = {},
+	['players'] = {}
+})
+}
+
+]]
+
+local commands = {}
+
+-- constants
+local PLAYERS: Players = game:GetService ("Players")
+local LOCALPLAYER: Player = PLAYERS.LocalPlayer
 local CHARACTER = LOCALPLAYER.Character or LOCALPLAYER.CharacterAdded:Wait()
-local HUMANOID = CHARACTER.Humanoid
+local GUI: ScreenGui
+-- constants
 
-local function mAddCMD(cmd , data)
-    table.insert(commands, data)
+game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
+	PLAYERS = game:GetService ("Players")
+	LOCALPLAYER = PLAYERS.LocalPlayer
+	CHARACTER = character
+end)
+
+-- properties can be anything you want, just be sure that it has at least ['func'] or ["func"]
+function addcmd (cmd: string, properties: table)
+	commands[cmd] = properties
 end
 
-local function addcmd(cmd, _alias, callback)
-    commands[cmd] = callback
-	if _alias == "" then return end
-    alias[_alias] = cmd
+addcmd ("print", {
+	['needs_player'] = false,
+	['func'] = function(hiimatext: table)
+		print(hiimatext.text)
+	end,
+	['alias'] = 'p',
+})
+
+addcmd ('speed', {
+	['needs_player'] = false,
+	['alias'] = 'ws',
+	['func'] = function( imtable: table )
+		CHARACTER.Humanoid.WalkSpeed = tonumber(imtable.text)
+	end
+})
+
+addcmd ('jumppower',{
+	['alias'] = 'jp',
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		CHARACTER.Humanoid.JumpPower = tonumber(imtable.text)
+	end
+})
+
+addcmd ('maxfps', {
+	['alias'] = nil,
+	['needs_player'] = false,
+	['func'] = function (imtable: table)
+		local setmaxfps = setmaxfps or set_fps_cap or setfpscap
+		if setmaxfps then
+			local number = tonumber(imtable.text)
+			setmaxfps(number)
+		end
+	end
+})
+
+addcmd ('antiafk', {
+	['events'] = {},
+	['needs_player'] = false,
+	['func'] = function ()
+		local antiafk = LOCALPLAYER.Idled:Connect(function()
+			for index, value in ipairs (getconnections(LOCALPLAYER.Idled)) do
+				value:Disable()
+				value:Disconnect()
+			end
+		end)
+		table.insert(commands.antiafk.events, antiafk)
+	end,
+})
+
+addcmd ('unantiafk', {
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.antiafk.events) do
+			value:Disconnect()
+		end
+		table.clear (commands.antiafk.events)
+	end
+})
+
+addcmd ('spin', {
+	['alias'] = 'angularvelocity',
+	['needs_player'] = false,
+	['events'] = {},
+	['func'] = function(imtable: table)
+		local bav = Instance.new ('BodyAngularVelocity')
+		bav.Parent = CHARACTER.HumanoidRootPart or CHARACTER:WaitForChild ('HumanoidRootPart')
+		bav.AngularVelocity = Vector3.new (0, tonumber(imtable.text), 0)
+		bav.MaxTorque = Vector3.new (0, math.huge, 0)
+		table.insert(commands.spin.events, bav)
+	end
+})
+
+addcmd ('unspin', {
+	['alias'] = 'unangularvelocity',
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.spin.events) do
+			value:Destroy()
+		end
+		table.clear (commands.spin.events)
+	end
+})
+
+addcmd ('rejoin', {
+	['needs_player'] = false,
+	['func'] = function()
+		LOCALPLAYER:Kick()
+    	task.wait(0.3)
+    	if #PLAYERS:GetPlayers() <= 1 then
+        	game:GetService ( "TeleportService" ):Teleport ( game.PlaceId, LOCALPLAYER )
+    	else
+        	game:GetService ( 'TeleportService' ):TeleportToPlaceInstance ( game.PlaceId, game.JobId, LOCALPLAYER )
+    	end
+	end
+})
+
+addcmd ('loadfile', {
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		if loadfile then
+			loadfile(imtable.text)()
+		end
+	end
+})
+
+addcmd ('runcode', {
+	['alias'] = 'rc',
+	['needs_player'] = false,
+	['func'] = function (imtable:table): string
+		loadstring (imtable.text)()
+	end
+})
+
+addcmd ('hitbox', {
+	['alias'] = 'collisions',
+	['needs_player'] = false,
+	['events'] = {},
+	['func'] = function(): nil
+		for index, value in ipairs (workspace:GetDescendants()) do
+			if value:IsA'BasePart' then
+				local box = Instance.new ('SelectionBox')
+				table.insert (commands.hitbox.events, box)
+				box.Parent = value
+				box.LineThickness = 0.015
+				box.Adornee = value
+				if value.Transparency > 0 then
+					box.Color3 = Color3.fromRGB (255, 201, 252)
+				else
+					box.Color3 = Color3.fromRGB (201,248,255)
+				end
+			end
+		end
+	end
+})
+
+addcmd ('unhitbox', {
+	['alias'] = 'uncollisions',
+	['needs_player'] = false,
+	['func'] = function(): nil
+		for index, value in ipairs (commands.hitbox.events) do
+			value:Destroy()
+		end
+		table.clear(commands.hitbox.events)
+	end
+})
+
+addcmd ('cmds', {
+	['alias'] = 'help',
+	['needs_player'] = false,
+	['func'] = function ()
+		table.foreach (commands, function (key, value)
+			print (key, value.alias)
+		end)
+	end
+})
+
+addcmd ('noclip', {
+	['alias'] = 'nc',
+	['needs_player'] = false,
+	['events'] = {},
+	['connections'] = {},
+	['func'] = function ()
+		for index, value in ipairs (CHARACTER:GetDescendants()) do
+			if value:IsA'BasePart' and value.CanCollide == true then
+				table.insert (commands.noclip.events, value)
+			end
+		end
+
+		table.insert (commands.noclip.connections,game:GetService("RunService").Stepped:Connect (function()
+			for index, value in ipairs (commands.noclip.events) do
+				value.CanCollide = false
+			end
+		end) )
+	end
+})
+
+addcmd ('clip', {
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.noclip.events) do
+			value.CanCollide = true
+		end
+		
+		for index, value in ipairs (commands.noclip.connections) do
+			value:Disconnect()
+		end
+
+		table.clear (commands.noclip.connections)
+		table.clear (commands.noclip.events)
+	end
+})
+
+addcmd ('jump', {
+	['needs_player'] = false,
+	['func'] = function()
+		CHARACTER.Humanoid:ChangeState ( Enum.HumanoidStateType.Jumping )
+	end
+})
+
+addcmd ('sit', {
+	['needs_player'] = false,
+	['func'] = function()
+		CHARACTER.Humanoid.Sit = true
+	end
+})
+
+addcmd ('rainbow', {
+	['alias'] = 'rainbow_world',
+	['needs_player'] = false,
+	['func'] = function()
+		local fancymath = LOCALPLAYER.AccountAge + LOCALPLAYER.UserId + workspace.GlobalWind.Magnitude + workspace.Gravity
+		local rand = Random.new (fancymath)
+		for index, value in ipairs (workspace:GetDescendants()) do
+			if value:IsA'BasePart' then
+				value.Color = Color3.fromRGB (rand:NextNumber(0, 255), rand:NextNumber(0,255), rand:NextNumber(0,255))
+			end
+		end
+	end
+})
+
+addcmd ('notify', {
+	['needs_player'] = false,
+	['alias'] = 'fakechat',
+	['func'] = function(imtable: table)
+		Notify (imtable.text)
+	end
+})
+
+addcmd ('goto', {
+	['alias'] = 'to',
+	['needs_player'] = true,
+	['func'] = function(imtable: table)
+		for index, value in ipairs (imtable.playerobjects) do
+			CHARACTER.HumanoidRootPart.CFrame = value.Character.HumanoidRootPart.CFrame
+		end
+	end
+})
+
+addcmd ('firecds', {
+	['alias'] = 'fireclickdetectors',
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (workspace:GetDescendants()) do
+			if value:IsA'ClickDetector' then
+				fireclickdetector (value)
+			end
+		end
+	end
+})
+
+addcmd ('view', {
+	['needs_player'] = true,
+	['connections'] = {},
+	['func'] = function (imtable: table)
+		for index, value in ipairs (imtable.playerobjects) do
+			workspace.CurrentCamera.CameraSubject = value.Character.Humanoid
+			
+			table.insert(commands.view.connections, value.Character.Humanoid.Died:Connect(function()
+				workspace.CurrentCamera.CameraSubject = LOCALPLAYER.Character.Humanoid
+			end))
+		end
+	end
+})
+
+addcmd ('infjump', {
+	['needs_player'] = false,
+	['func'] = function()
+
+		game:GetService("ContextActionService"):BindAction("JUMPFOREVERYEEEEEEEEEEEEEEEEEEEE", function(actionName, state, object)
+			if state == Enum.UserInputState.Begin then
+				CHARACTER.Humanoid:ChangeState (Enum.HumanoidStateType.Jumping)
+			end
+		end, false, Enum.KeyCode.Space)
+	end
+})
+
+
+addcmd ('uninfjump', {
+	['needs_player'] = false,
+	['func'] = function()
+		game:GetService"ContextActionService":UnbindAction("JUMPFOREVERYEEEEEEEEEEEEEEEEEEEE")
+	end
+})
+
+addcmd ('nosit', {
+	['needs_player'] = false,
+	['events'] = {},
+	['func'] = function()
+		table.insert (commands.nosit.events, CHARACTER.Humanoid.Seated:Connect(function(seated)
+			if seated then
+				CHARACTER.Humanoid:ChangeState (Enum.HumanoidStateType.Jumping)
+			end
+		end))
+	end
+})
+
+addcmd ('unnosit', {
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.nosit.events) do
+			value:Disconnect()
+		end
+
+	end
+})
+
+addcmd ('makewaypoint', {
+	['alias'] = 'mkwp',
+	['waypoints'] = {},
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		local currentCFrame = CHARACTER.HumanoidRootPart.CFrame
+		commands.makewaypoint.waypoints[imtable.text] = currentCFrame
+		-- make garbage collector free it
+		currentCFrame = nil
+	end
+})
+
+addcmd ('gotowaypoint', {
+	['alias'] = 'gotowp',
+	['needs_player'] = false,
+	['func'] = function(imtable)
+		table.foreach (commands.makewaypoint.waypoints, function(key, value)
+			if key == imtable.text then
+				CHARACTER.HumanoidRootPart.CFrame = value
+			end
+		end)
+	end
+})
+
+addcmd ('removewaypoint', {
+	['alias'] = 'rmwp',
+	['needs_player'] = false,
+	['func'] = function(imtable)
+		local waypoints: table = commands.makewaypoint.waypoints
+		waypoints[imtable.text] = nil
+	end
+})
+
+addcmd ('pathtowaypoint', {
+	['alias'] = 'pathwp',
+	['needs_player'] = false,
+	['parts'] = {},
+	['func'] = function(imtable: table)
+		local pathfinding = game:GetService("PathfindingService")
+
+		local path = pathfinding:CreatePath({
+			AgentRadius = 2.0,
+			AgentHeight = 5.0,
+			AgentCanJump = true,
+		})
+		local wp = commands.makewaypoint.waypoints[imtable.text].Position
+		local points
+		local success, result = pcall (function()path:ComputeAsync(CHARACTER.HumanoidRootPart.Position, wp )end)
+
+		if success and path.Status == Enum.PathStatus.Success then
+			points = path:GetWaypoints()
+		end
+
+		for index, value in ipairs (points) do
+			local part = Instance.new("Part")
+			part.Parent = workspace
+			part.Size = Vector3.one
+			part.Color = Color3.new (1, 1, 1)
+			part.CastShadow = false
+			part.CanCollide = false
+			part.Shape = Enum.PartType.Ball
+			part.CanTouch = false
+			part.CanQuery = false
+			part.Anchored = true
+			part.Material = Enum.Material.Neon
+			part.Position = value.Position + Vector3.new (0, 3, 0)
+			table.insert(commands.pathtowaypoint.parts, part)
+		end
+
+		task.delay (10, function()
+			for index, value in ipairs (commands.pathtowaypoint.parts) do
+				value:Destroy()
+			end
+			table.clear (commands.pathtowaypoint.parts)
+		end)
+	end
+})
+
+addcmd ('bhop', {
+	['alias'] = 'bunnyhop',
+	['events'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		table.insert(commands.bhop.events, game:GetService("RunService").Heartbeat:Connect(function()
+			if CHARACTER.Humanoid.Sit or CHARACTER.Humanoid.FloorMaterial ~= Enum.Material.Air then
+				CHARACTER.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+			end
+		end))
+	end
+})
+
+addcmd ('unbhop', {
+	['alias'] = 'unbunnyhop',
+	['func'] = function()
+		for index, value in pairs (commands.bhop.events) do
+			value:Disconnect()
+		end
+		table.clear (commands.bhop.events)
+	end
+})
+
+addcmd ('hipheight', {
+	['alias'] = 'hh',
+	['needs_player'] = false,
+	['func'] = function(imtable)
+		CHARACTER.Humanoid.HipHeight = tonumber(imtable.text)
+	end
+})
+
+addcmd ('randomspeed', {
+	['alias'] = 'rs',
+	['events'] = {},
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		table.insert (commands.randomspeed.events, game:GetService("RunService").RenderStepped:Connect(function()
+			CHARACTER.Humanoid.WalkSpeed = math.random(16,200)
+		end))
+	end
+})
+
+addcmd ('unrandomspeed', {
+	['alias'] = 'unrs',
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in pairs (commands.randomspeed.events) do
+			value:Disconnect()
+		end
+		table.clear (commands.randomspeed.events)
+	end
+})
+
+addcmd ('togglegui', {
+	['alias'] = 'tggui',
+	['needs_player'] = false,
+	['func'] = function()
+		GUI.Enabled = not GUI.Enabled
+	end
+})
+
+addcmd ('streamer', {
+	['alias'] = 'streamermode',
+	['needs_player'] = false,
+	['events'] = {},
+	['func'] = function()
+		
+		table.insert(commands.streamer.events, game:GetService('RunService').Heartbeat:Connect(function()
+			for index, value in ipairs (PLAYERS:GetPlayers()) do
+				value.Name = game:GetService('HttpService'):GenerateGUID (false)
+				value.Character.Humanoid.DisplayName = game:GetService('HttpService'):GenerateGUID (false)
+				value.Character.Humanoid.Died:Connect(function()
+					value.Name = game:GetService('HttpService'):GenerateGUID (false)
+					value.Character.Humanoid.DisplayName = game:GetService('HttpService'):GenerateGUID (false)
+				end)
+			end
+	
+			game.Players.PlayerAdded:Connect (function(player)
+				player.CharacterAdded:Wait()
+				player.Name = game:GetService('HttpService'):GenerateGUID (false)
+				player.DisplayName = game:GetService('HttpService'):GenerateGUID (false)
+				player.Character.Humanoid.Died:Connect(function()
+					player.CharacterAdded:Wait()
+					for index, value in pairs (player.Character:GetDescendants()) do
+						if value:IsA'BasePart' then
+							player.Name = game:GetService('HttpService'):GenerateGUID (false)
+							player.DisplayName = game:GetService('HttpService'):GenerateGUID (false)
+						end
+					end
+				end)
+			end)
+		end))
+
+	end
+})
+
+addcmd ('unstreamer', {
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.streamer.events) do
+			value:Disconnect()
+		end
+		table.clear (commands.streamer.events)
+	end
+})
+
+addcmd ('togglerotate', {
+	['alias'] = 'togglerot',
+	['needs_player'] = false,
+	['func'] = function()
+		CHARACTER.Humanoid.AutoRotate = not CHARACTER.Humanoid.AutoRotate
+	end
+})
+
+addcmd ('hidedisplaynames', {
+	['needs_player'] = false,
+	['events'] = {},
+	['names'] = {},
+	['func'] = function()
+		for index, value in ipairs (PLAYERS:GetPlayers()) do
+			table.insert (commands.nodisplaynames.names, value.Name..' '..value.DisplayName)
+			value.DisplayName = value.Name
+			value.Character.Humanoid.DisplayName = value.Name
+		end
+
+		table.insert (commands.nodisplaynames.events, PLAYERS.PlayerAdded:Connect(function(player)
+			local character = player.Character or player.CharacterAdded:Wait()
+			table.insert ( commands.nodisplaynames.names, player.Name.." "..player.DisplayName)
+			player.DisplayName = player.Name
+			if character then
+				character.Humanoid.DisplayName = player.Name
+			end
+		end))
+	end
+})
+
+addcmd ('showdisplaynames', {
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.nodisplaynames.names) do
+			for index2, value2 in ipairs (PLAYERS:GetPlayers()) do
+				local str = string.split (value, " ")
+				if str[1] == value2.Name then
+					value2.DisplayName = str[2]
+					value2.Character.Humanoid.DisplayName = str[2]
+				end
+			end
+		end
+	end
+})
+
+addcmd ('freeze', {
+	['needs_player'] = true,
+	['parts'] = {},
+	['func'] = function (imtable: table)
+		local playernames = imtable.playernames
+		local playerobjs = imtable.playerobjects
+
+		for index, value in ipairs (playerobjs) do
+
+			for _, value2 in ipairs (value.Character:GetDescendants()) do
+				if value2:IsA'BasePart' and value2.Anchored == false then
+					value2.Anchored = true
+					table.insert (commands.freeze.parts, value2)
+				end
+			end
+
+		end
+	end
+})
+
+addcmd ('unfreeze', {
+	['alias'] = 'thaw',
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in pairs (commands.freeze.parts) do
+			value.Anchored = false
+		end
+		table.clear (commands.freeze.parts)
+	end
+})
+
+addcmd ('predict', {
+	['needs_player'] = true,
+	['connections'] = {},
+	['parts'] = {},
+	['func'] = function(imtable: table)
+		local playernames = imtable.playernames
+		local playerobjs = imtable.playerobjects
+
+		for useless, player in ipairs (playerobjs) do
+			
+			local character = player.Character or player.CharacterAdded:Wait()
+			local part = Instance.new ('Part')
+			part.Anchored = true
+			part.CanCollide = false
+			part.Parent = workspace
+			part.Size = Vector3.one
+			table.insert (commands.predict.parts, part)
+			part.Material = Enum.Material.Neon
+			table.insert(commands.predict.connections, player.Character.Humanoid.Died:Connect(function() part:Destroy() end))
+			table.insert(commands.predict.connections, game:GetService'RunService'.Heartbeat:Connect(function(step)
+				if character.HumanoidRootPart then
+					local cframe = predictstep (character.HumanoidRootPart, step)
+					part.CFrame = cframe
+				end
+			end))
+
+		end
+	end
+})
+
+addcmd ('unpredict', {
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.predict.connections) do
+			value:Disconnect()
+		end
+
+		for index, value in ipairs (commands.predict.parts) do
+			value:Destroy()
+		end
+	end
+})
+
+addcmd ('gravity', {
+	['alias'] = 'grav',
+	['needs_player'] = false,
+	['func'] = function (imtable: table)
+		game:GetService'Workspace'.Gravity = tonumber(imtable.text)
+	end
+})
+
+addcmd ('fov', {
+	['alias'] = 'changefov',
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		workspace.CurrentCamera.FieldOfView = tonumber (imtable.text)
+	end
+})
+
+addcmd ('spam', {
+	['alias'] = 'annoy',
+	['needs_player'] = false,
+	['events'] = {},
+	['func'] = function(imtable: table)
+		commands.spam.events.spamvar = true
+		while commands.spam.events.spamvar do
+			wait(3)
+			game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer (imtable.text, 'All')
+		end
+	end
+})
+
+addcmd ('unspam', {
+	['alias'] = 'unannoy',
+	['needs_player'] = false,
+	['func'] = function()
+		table.clear(commands.spam.events)
+	end
+})
+
+addcmd ('pmspam', {
+	['alias'] = 'pmannoy',
+	['needs_player'] = true,
+	['events'] = {},
+	['func'] = function(imtable: table)
+		local playername = imtable[1]
+		commands.pmspam.events.spamvar = true
+		for index, value in ipairs (playername) do
+			while commands.pmspam.events.spamvar do
+				wait(3)
+				game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer (imtable.text, value)
+			end
+		end
+	end
+})
+
+addcmd ('unpmspam', {
+	['alias'] = 'unpmannoy',
+	['events'] = {},
+	['func'] = function()
+		table.clear(commands.pmspam.events)
+	end
+})
+
+addcmd ('walkto', {
+	['alias'] = 'pathfindwalk',
+	['needs_player'] = true,
+	['events'] = {},
+	['func'] = function(imtable: table)
+		local playernames = imtable.playernames
+		local playerobjs = imtable.playerobjects
+		
+		local pathfinding = game:GetService'PathfindingService'
+		local path = pathfinding:CreatePath({
+			AgentRadius = 2.0,
+			AgentCanJump = true,
+			AgentHeight = 5.0
+		})
+
+		local waypoints, reached, blocked, nextindex
+
+		for index, value in ipairs (playerobjs) do
+			local success, result = pcall(function()
+				path:ComputeAsync(CHARACTER.HumanoidRootPart.Position, value.Character.HumanoidRootPart.Position)
+			end)
+
+			if success and path.Status == Enum.PathStatus.Success then
+				waypoints = path:GetWaypoints()
+			end
+
+			blocked = path.Blocked:Connect(function(blockedwaypoint)
+				if blockedwaypoint >= nextindex then
+					path.Unblocked:Wait()
+				end
+			end)
+			table.insert (commands.walkto.events, blocked)
+
+			if not reached then
+				reached = CHARACTER.Humanoid.MoveToFinished:Connect(function(reached)
+					if reached and nextindex < #waypoints then
+						nextindex += 1
+						CHARACTER.Humanoid:MoveTo (waypoints [nextindex].Position)
+					else
+						for index2, value2 in ipairs (commands.walkto.events) do
+							value2:Disconnect()
+						end
+						table.clear (commands.walkto.events)
+					end
+				end)
+				table.insert (commands.walkto.events, reached)
+			end
+			nextindex = 2
+			CHARACTER.Humanoid:MoveTo (waypoints[nextindex].Position)
+
+			for index, value in ipairs (waypoints) do
+				local part = Instance.new("Part")
+				part.Parent = workspace
+				part.Size = Vector3.one
+				part.Color = Color3.new (1, 1, 1)
+				part.CastShadow = false
+				part.CanCollide = false
+				part.Shape = Enum.PartType.Ball
+				part.CanTouch = false
+				part.CanQuery = false
+				part.Anchored = true
+				part.Material = Enum.Material.Neon
+				part.Position = value.Position + Vector3.new (0, 2.5, 0)
+
+				game:GetService('Debris'):AddItem (part, #waypoints/2)
+			end
+		end
+	end
+})
+
+addcmd ('unwalkto', {
+	['alias'] = 'unpathfindwalkto',
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.walkto.events) do
+			value:Disconnect()
+		end
+	end
+})
+
+addcmd ('shiftspeed', {
+	['needs_player'] = false,
+	['events'] = {},
+	['func'] = function(imtable: table)
+		commands.shiftspeed.events.speed = CHARACTER.Humanoid.WalkSpeed
+		local number = tonumber(imtable.text)
+		game:GetService('ContextActionService'):BindAction(
+			'ILIKECHEESE',
+			function(actionname, inputstate, inputobject)
+				if inputstate == Enum.UserInputState.Begin then
+					CHARACTER.Humanoid.WalkSpeed = number
+				elseif inputstate == Enum.UserInputState.End then
+					CHARACTER.Humanoid.WalkSpeed = commands.shiftspeed.events.speed
+				end
+			end,
+		false,
+		Enum.KeyCode.LeftShift)
+	end
+})
+
+addcmd ('unshiftspeed', {
+	['needs_player'] = false,
+	['func'] = function()
+		game:GetService('ContextActionService'):UnbindAction('ILIKECHEESE')
+		CHARACTER.Humanoid.WalkSpeed = commands.shiftspeed.events.speed
+		table.clear (commands.shiftspeed.events)
+	end
+})
+
+addcmd ('tpunanchored', {
+	['alias'] = 'tpun',
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (game:GetService('Workspace'):GetDescendants()) do
+			if value:IsA'BasePart' and value.Anchored == false then
+				value.Position = CHARACTER.HumanoidRootPart.Position
+			end
+		end
+	end
+})
+
+addcmd ('rmcmd', {
+	['alias'] = 'removecmd',
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		commands[imtable.text] = nil
+	end
+})
+
+addcmd ('esp', {
+	['alias'] = 'wallhack',
+	['needs_player'] = false,
+	['parts'] = {},
+	['events'] = {},
+	['func'] = function()
+		local function CreateBox (object)
+			local box = Instance.new ('BoxHandleAdornment')
+			box.AlwaysOnTop = true
+			box.Parent = object
+			box.ZIndex = 10
+			box.Transparency = 0.5
+			box.Adornee = object
+			box.Size = object.Size
+			table.insert (commands.esp.parts, box)
+			return box
+		end
+
+		table.foreach (PLAYERS:GetPlayers(), function(key, value)
+			for useless, player in ipairs (value.Character:GetDescendants()) do
+				if player.Name == 'Torso' then continue end
+				if player:IsA'BasePart' then
+					CreateBox (player)
+				end
+			end
+
+			-- extremely inefficient and can lag on lower end devices, rewrite it later
+			value:GetPropertyChangedSignal('TeamColor'):Connect(function()
+				for key, object in pairs (commands.esp.events) do
+					object:Destroy()
+				end
+
+				local character = value.Character or value.CharacterAdded:Wait()
+				for _, object in pairs (character:GetDescendants()) do
+					if object:IsA'BasePart' then
+						CreateBox (object)
+					end
+				end
+			end)
+
+			table.insert(commands.esp.events, value.CharacterAdded:Connect(function(character)
+				for useless, val in ipairs (character:GetDescendants()) do
+					if val:IsA'BasePart' then
+						CreateBox (val)
+					end
+				end
+			end))
+		end)
+
+		table.insert (commands.esp.events, PLAYERS.PlayerAdded:Connect(function(player)
+			player.CharacterAdded:Connect(function(character)
+				for index, value in ipairs (character:GetDescendants()) do
+					if value:IsA'BasePart' and value.Name ~= 'Torso' then
+						CreateBox (value)
+					end
+				end
+			end)
+		end))
+	end
+})
+
+addcmd ('unesp', {
+	['alias'] = 'unwallhack',
+	['needs_player'] = false,
+	['func'] = function()
+		table.foreach (commands.esp.parts, function(key, value)
+			value:Destroy()
+			value = nil
+		end)
+
+		table.foreach (commands.esp.events, function(key, value)
+			value:Disconnect()
+			value = nil
+		end)
+
+		table.clear (commands.esp.events)
+		table.clear (commands.esp.parts)
+	end
+})
+
+addcmd ('xray', {
+	['needs_player'] = false,
+	['connections'] =  {},
+	['parts'] = {},
+	['func'] = function()
+		for index, value in ipairs (workspace:GetDescendants()) do
+			if value:IsA('BasePart') then
+				table.insert(commands.xray.parts, value)
+				value.Transparency = 0.5
+			end
+		end
+
+		table.insert(commands.xray.connections,workspace.DescendantAdded:Connect(function(descendant)
+			if descendant:IsA'BasePart' then
+				descendant.Transparency = 0.5
+			end
+		end))
+	end
+})
+
+addcmd ('unxray', {
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.xray.parts) do
+			value.Transparency = 0
+		end
+
+		for index, value in ipairs (commands.xray.connections) do
+			value:Disconnect()
+		end
+	end
+})
+
+-- not real backtracking, consider storing the player position every frame with RenderStepped then creating a new
+-- object with the stored position ( possibly laggy after some time, consider using Debris:AddItem)
+addcmd ('backtrack', {
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		local number = tonumber(imtable.text)
+		game:GetService'NetworkSettings'.IncomingReplicationLag = number
+	end
+})
+
+addcmd ('plugin', {
+	['alias'] = {'addplugin'},
+	['needs_player'] = false,
+	['plugins'] = {},
+	['func'] = function(imtable: table)
+		local fileName: string = imtable.text
+		local plugin: table = loadfile (fileName)() -- returns a table
+		for index, value in ipairs (plugin) do
+			commands[value.Name] = value.Properties
+		end
+		table.insert (commands.plugin.plugins, plugin)
+	end
+})
+
+addcmd ('removeplugin', {
+	['alias'] = {'rmplugin'},
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		local name = imtable.text
+		for index, value in ipairs (commands.plugin.plugins) do
+			if value.Name == name then
+				commands[value.Name] = nil
+			end
+		end
+	end
+})
+
+addcmd ('fog', {
+	['alias'] = 'setfog',
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		local number = tonumber(imtable.text)
+		game.Lighting.FogStart = number
+	end
+})
+
+addcmd ('copyname', {
+	['alias'] = {'copyplayername'},
+	['needs_player'] = true,
+	['func'] = function(imtable: table)
+		local playernames = imtable.playernames
+		if #playernames == 1 then
+			setclipboard (playernames[1])
+		else
+			setclipboard (table.concat(playernames,', '))
+		end
+	end
+})
+
+addcmd ('slopeangle', {
+	['alias'] = {'maxslopeangle'},
+	['needs_player'] = false,
+	['func'] = function(imtable: table)
+		local number = tonumber(imtable.text)
+		CHARACTER.Humanoid.MaxSlopeAngle = number
+	end
+})
+
+addcmd ('tpdir', {
+	['alias'] = {},
+	['needs_player'] = false,
+	['events'] = {},
+	['func'] = function()
+		table.insert(commands.tpdir.events, game:GetService('RunService').RenderStepped:Connect(function()
+			CHARACTER.HumanoidRootPart.CFrame += CHARACTER.Humanoid.MoveDirection
+		end))
+	end
+})
+
+addcmd ('untpdir', {
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.tpdir.events) do
+			value:Disconnect()
+		end
+	end
+})
+
+addcmd ('freezeunanchored', {
+	['alias'] = {'freezeua'},
+	['needs_player'] = false,
+	['parts'] = {},
+	['func'] = function()
+		for index, value in ipairs (workspace:GetDescendants()) do
+			if value:IsA('BasePart') and value.Anchored == false then
+				value.Anchored = true
+				table.insert(commands.freezeunanchored.parts, value)
+			end
+		end
+	end
+})
+
+addcmd ('thawua', {
+	['alias'] = {'thawua'},
+	['needs_player'] = false,
+	['func'] = function()
+		for index, value in ipairs (commands.freezeunanchored.parts) do
+			value.Anchored = false
+		end
+	end
+})
+
+addcmd ('joinlogs', {
+	['alias'] = {},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		table.insert (commands.joinlogs.connections, PLAYERS.PlayerAdded:Connect(function(player)
+			Notify (player.Name .. ' joined', Color3.new(0, 1, 0.368627))
+		end))
+	end
+})
+
+addcmd ('unjoinlogs', {
+	['alias'] = {},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		for key, value in pairs (commands.joinlogs.connections) do
+			value:Disconnect()
+		end
+		table.clear(commands.joinlogs.connections)
+	end
+})
+
+addcmd ('leavelogs', {
+	['alias'] = {'exitlogs', 'quitlogs'},
+	['needs_player'] = false,
+	['connections'] = {},
+	['func'] = function()
+		table.insert (commands.leavelogs.connections, PLAYERS.PlayerRemoving:Connect(function(player)
+			Notify (player.Name .. ' left', Color3.new(0.721568, 0, 0))
+		end))
+	end
+})
+
+addcmd ('unleavelogs', {
+	['alias'] = {'unexitlogs','unquitlogs'},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		for key, value in pairs (commands.leavelogs.connections) do
+			value:Disconnect()
+		end
+		table.clear(commands.leavelogs.connections)
+	end
+})
+
+
+addcmd ('friendlogs', {
+	['alias'] = {},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		table.insert (commands.friendlogs.connections, PLAYERS.PlayerAdded:Connect(function(player)
+			if player:IsFriendsWith(LOCALPLAYER.UserId) then
+				Notify (player.Name .. ' joined', Color3.new(0, 0.898039, 1))
+			end
+		end))
+	end
+})
+
+addcmd ('unfriendlogs', {
+	['alias'] = {},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		for key, value in pairs (commands.friedlogs.connections) do
+			value:Disconnect()
+		end
+		table.clear(commands.friendlogs.connections)
+	end
+})
+
+addcmd ('whisperlogs', {
+	['alias'] = {},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		local chatevents = game.ReplicatedStorage:WaitForChild ("DefaultChatSystemChatEvents", math.huge)
+		table.insert(commands.whisperlogs.connections,chatevents:WaitForChild ("OnMessageDoneFiltering", math.huge).OnClientEvent:Connect (function(data)
+			if data ~= nil then
+				local player = tostring (data.FromSpeaker)
+				local message = tostring (data.Message)
+				local channel = tostring (data.OriginalChannel)
+				
+				if string.find (channel, "To ") then
+					message = "/w " .. string.gsub (channel, "To", "") .. message
+					Notify (player..message, Color3.new(0.674509, 0.368627, 1))
+				end
+	
+				if channel == "Team" then
+					message = "/team " .. message
+					Notify ('['..player..']: '.. message, Color3.new(0.662745, 0.345098, 1))
+				end
+	
+			end
+		end))
+	end
+})
+
+addcmd ('unwhisperlogs', {
+	['alias'] = {},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		for key, value in pairs (commands.whisperlogs.connections) do
+			value:Disconnect()
+		end
+		table.clear(commands.whisperlogs.connections)
+	end
+})
+
+addcmd ('tptocamera', {
+	['alias'] = {'gotocamera'},
+	['connections'] = {},
+	['needs_player'] = false,
+	['func'] = function()
+		CHARACTER.HumanoidRootPart.CFrame = workspace.CurrentCamera.CFrame
+	end
+})
+
+addcmd ('chatage', {
+	['needs_player'] = true,
+	['func'] = function(imtable: table)
+		local playerobjects = imtable.playerobjects
+		for key, value in pairs (playerobjects) do
+			game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer (value.Name .. ' is '.. value.AccountAge .. 'days old', 'All')
+		end
+	end
+})
+
+addcmd ('notifyage', {
+	['needs_player'] = true,
+	['func'] = function(imtable: table)
+		for key, value in pairs (imtable.playerobjects) do
+			Notify (value.Name..' is '..value.AccountAge..' days old', Color3.new(1, 0, 0.584313))
+		end
+	end
+})
+
+-- part: Instance, step: number
+function predictstep (...): CFrame
+	local args = {...}
+
+	local part: any = args[1]
+
+	local step: number = args[2] or 0
+
+	local currentposition: Vector3 = part.Position
+	local currentvelocity: Vector3 = part.AssemblyLinearVelocity or Vector3.zero
+
+	local currentorientation: Vector3 = part.Orientation
+
+	-- i currently dont know how to calculate acceleration on ROBLOX; with acceleration = (initialVelocity - finalVelocity) / time, it should work but doesn't
+
+	-- formula: position + (acceleration/2) * step * gravity * step
+	local predictedstep = CFrame.new ( (currentposition + (currentvelocity/2) * step * workspace.Gravity * step ) )
+	
+	return predictedstep
 end
 
-function Notify (message, color, size)
-    game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", {
+-- message: string, color: Color3, size: number
+function Notify (...)
+	local args = {...}
+	local message: string
+	local color: Color3
+	local size: number
+
+	message = tostring(args[1])
+	color = args[2] or Color3.fromRGB (255,255,255)
+	size = args[3] or 18
+
+	game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", {
         Text = message,
         Color = color,
         FontSize = Enum.FontSize["Size" .. tostring(size)]
     })
 end
 
-local function FindPlayer (Name)
-    if Name == nil then return nil end
-    
-    if Name == "all" then
-        return PLAYERS:GetPlayers()
-    elseif Name == "others" then
-        local temp_table = {}
-        for index, value in pairs (PLAYERS:GetPlayers()) do if value ~= LOCALPLAYER then table.insert (temp_table, value) end end
-        return temp_table
-    end
+function findplayer (playername: string): table
+	local name: table = {}
+	local obj: table = {}
 
-    for index, value in pairs (PLAYERS:GetPlayers()) do
-        if string.lower (value.Name):match("^" .. string.lower (tostring(Name))) then
-            return value
-        end
-    end
-    return nil
-end
-
-
-function RunCMD (command)
-    local list = {}
-
-    for word in string.gmatch (command, "%g+") do
-        table.insert (list, tostring(word))
-    end
-
-    local cmd = list[1]
-
-    if not commands[cmd] then
-        for index, value in pairs (alias) do
-            if index == cmd then
-                cmd = value
-            end
-        end
-    end
-
-    if not cmd then return end
-
-    local function Run (...)
-        local playerInstance
-        local args = {...}
-        if typeof (args[1]) == "Instance" then
-            playerInstance = args[1]
-
-            local success, result = pcall ( coroutine.wrap (function()
-                commands[cmd] (playerInstance, table.concat(args, " ",2))
-            end) )
-
-            return success, result
-        end
-        
-        local success, result = pcall ( coroutine.wrap (function()
-            commands[cmd] (table.concat(args, " "))
-        end) )
-        
-        table.clear (args)
-        return success, result
-    end
-
-    local player = FindPlayer (list[2])
-    if player then
-        local arguments = table.concat (list, " ", 3)
-        local success, result = Run (player,arguments)
-        if success then table.insert (command_history, tostring(cmd)) return end
-        if result then
-            Notify (tostring(result), Color3.fromRGB(255,0,0), 18)
-        end
-    else
-        local arguments = table.concat (list, " ", 2)
-        local success, result = Run (arguments)
-        if success then table.insert (command_history, tostring(cmd)) return end
-        if result then
-            Notify (tostring(result), Color3.fromRGB(255,0,0), 18)
-        end
-    end
-
-    table.clear (list)
-end
-
-function findcommand(cmd_name)
-    for index, value in pairs ( commands ) do
-        if index == cmd_name then
-            return index
-        end
-    end
-
-    for index, value in pairs (alias) do
-        if index == cmd_name then
-            return index
-        end
-    end
-end
-
-local function _print ( _string )
-    print ( _string )
-end
-
-local function walkspeed ( int )
-    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = int
-end
-
-local function jumppower ( int )
-    if tonumber(int) <= 0 then int = game.Players.LocalPlayer.Character.Humanoid.JumpPower end
-    game.Players.LocalPlayer.Character.Humanoid.JumpPower = tonumber ( int )
-end
-
-local function setmaxfps ( int )
-    if setfpscap then
-        setfpscap ( int )
-    end
-end
-
-local function antiafk ( )
-    antiafk = game.Players.LocalPlayer.Idled:Connect(function()
-        for i,v in pairs(getconnections(game.Players.LocalPlayer.Idled)) do
-            v:Disable()
-            v:Disconnect()
-        end
-    end)
-    table.insert(events, "antiafk")
-end
-
-local function unantiafk ( )
-    if events.antiafk then antiafk:Disconnect() end
-    table.remove(events, table.find(events, "antiafk"))
-end
-
-local function spin( int )
-    local BodyAngularVelocity = Instance.new( "BodyAngularVelocity" )
-    BodyAngularVelocity.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
-    BodyAngularVelocity.AngularVelocity = Vector3.new( 0, tonumber( int ), 0 )
-    BodyAngularVelocity.MaxTorque = Vector3.new( 0, math.huge, 0 )
-    table.insert( events, "spin" )
-end
-
-local function unspin ( )
-    game.Players.LocalPlayer.Character.HumanoidRootPart.BodyAngularVelocity:Destroy()
-    table.remove(events, table.find(events, "spin"))
-end
-
-local function clearevents ( )
-    for index, value in pairs ( events ) do
-        if value:IsA ( "Connection" ) or value:IsA ( "RBXScriptConnection" ) then value:Disconnect(); table.remove ( events, index ); continue end
-        table.remove ( events, index )
-    end
-end
-
-local function noclip ( )
-    local function _noclip ( )
-        for index, value in pairs (game.Players.LocalPlayer.Character:GetDescendants()) do
-            if value:IsA("BasePart") and value.CanCollide == true then
-                value.CanCollide = false
-            end
-        end
-    end
-    getgenv().__noclip = game:GetService("RunService").Stepped:Connect(_noclip)
-    table.insert( events, "noclip" )
-end
-
-local function clip ( )
-    local event = table.find( events, "noclip" )
-    if event then getgenv().__noclip:Disconnect() end
-end
-
-local function changestate ( state )
-    game.Players.LocalPlayer.Character.Humanoid:ChangeState( Enum.HumanoidStateType [ state ] )
-end
-
-local function jump ( )
-    game.Players.LocalPlayer.Character.Humanoid:ChangeState( Enum.HumanoidStateType.Jumping )
-end
-
-local function sit ( )
-    game.Players.LocalPlayer.Character.Humanoid.Sit = true
-end
-
-local function colorful_world ( )
-    local rand = Random.new ( game.Players.LocalPlayer.UserId + (100 / 2 * 6 + 2 - 1) + (math.random ( 0, math.random ( 0, 49604212 ) ) * 0.5 ) - 6 )
-    for index, value in pairs ( workspace:GetDescendants() ) do
-        if value:IsA ( "BasePart" ) or value:IsA ( "Part" ) then
-            value.Color3 = Color3.fromRGB ( rand:NextNumber (0, 255), rand:NextNumber (0, 255), rand:NextNumber (0, 255) )
-        end
-    end
-end
-
-local function drugs ( )
-    math.randomseed ( game.Players.LocalPlayer.UserId + (100 / 2 * 6 + 2 - 1) + (math.random ( 0, math.random ( 0, 49604212 ) ) * 0.5 ) - 6 )
-    for index, value in pairs ( workspace:GetDescendants() ) do
-        if value:IsA ( "BasePart" ) or value:IsA ( "Part" ) then
-            value.Color = Color3.fromRGB ( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 ) )
-        end
-    end
-    for i,v in pairs ( game.Lighting:GetDescendants() ) do
-        if v:IsA ( "Atmosphere" ) or v:IsA ( "Sky" ) then v:Destroy() end
-        Instance.new("Atmosphere", game.Lighting)
-        Instance.new("Sky", game.Lighting)
-    end
-    game:GetService("RunService").RenderStepped:Connect( function ( )
-        game.Lighting.ClockTime = math.random ( 0, 24 )
-        game.Lighting.Brightness = math.random ( 0, 10 )
-        game.Lighting.Atmosphere.Density = math.random ( 0, 1 )
-        game.Lighting.Atmosphere.Offset = math.random ( 0, 1 )
-        game.Lighting.Atmosphere.Color = Color3.fromRGB ( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 ) )
-        game.Lighting.Atmosphere.Decay = Color3.fromRGB ( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 ) )
-        game.Lighting.Atmosphere.Glare = math.random ( 0, 10 )
-    
-        game.Lighting.Atmosphere.Haze = math.random ( 0, 10 )
-    end)
-end
-
-local lastMessage
-local function CreateChatLogMessage ( message, parent )
-    local label = Instance.new ("TextLabel")
-    label.Parent = parent
-    label.BackgroundTransparency = 1
-    label.Size = UDim2.new (0,329,0,30)
-    label.TextColor3 = Color3.fromRGB(255,255,255)
-    label.TextWrapped = true
-    label.Text = message
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    if lastMessage then
-        label.Position = lastMessage.Position + UDim2.new(0,0,0,20)
-        lastMessage = label
-        return label
-    else
-        label.Position = UDim2.new (0,0,0,0)
-        lastMessage = label
-        return label
-    end
-end
-
-local CHATLOG_ScreenGui = Instance.new ("ScreenGui")
-CHATLOG_ScreenGui.Parent = gethui() or game.CoreGui
-CHATLOG_ScreenGui.Enabled = false
-
-local CHATLOG_Frame = Instance.new ("Frame")
-CHATLOG_Frame.Parent = CHATLOG_ScreenGui
-CHATLOG_Frame.BackgroundColor3 = Color3.fromRGB (98, 220, 184)
-CHATLOG_Frame.BorderSizePixel = 0
-CHATLOG_Frame.Size = UDim2.new (0, 341,0, 299)
-CHATLOG_Frame.Position = UDim2.new (0.237, 0,0.34, 0)
-
-local CHATLOG_SFrame = Instance.new ("ScrollingFrame")
-CHATLOG_SFrame.Parent = CHATLOG_Frame
-CHATLOG_SFrame.BackgroundColor3 = Color3.fromRGB (30,30,30)
-CHATLOG_SFrame.BorderSizePixel = 0
-CHATLOG_SFrame.Size = UDim2.new (0, 341,0, 291)
-CHATLOG_SFrame.Position = UDim2.new (0,0,0,0)
-CHATLOG_SFrame.ScrollBarImageColor3 = Color3.fromRGB(255,255,255)
-CHATLOG_SFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y--[[]]
-
-local function chatlog_everyone ( )
-    -- infinite yield
-    --[[for index, value in pairs (game.Players:GetPlayers()) do
-        chatlog ( value )
-    end]]
-    CHATLOG_ScreenGui.Enabled = true
-    local chatevents = game.ReplicatedStorage:WaitForChild ("DefaultChatSystemChatEvents", math.huge)
-    local messageevent = chatevents:WaitForChild ("OnMessageDoneFiltering", math.huge).OnClientEvent:Connect (function(data)
-        if data ~= nil then
-            local player = tostring (data.FromSpeaker)
-            local message = tostring (data.Message)
-            local channel = tostring (data.OriginalChannel)
-            
-            if string.find (channel, "To ") then
-                message = "/w " .. string.gsub (channel, "To", "") .. message
-            end
-
-            if channel == "Team" then
-                message = "/team " .. message
-            end
-
-            message = "[" .. player .. "]: " .. message
-
-            CreateChatLogMessage (message, CHATLOG_SFrame)
-        end
-    end)
-end
-
-local function save_chatlogs ( )
-    if writefile then writefile ( "creamfood_chatlogs.txt",  table.concat(getgenv().chatlog_messages, "\n"))
-    else
-        Notify ("Oops! Something gone wrong", Color3.fromRGB(200,0,0), 18)
-    end
-end
-
-local function _goto ( _string )
-    if FindPlayer ( _string ) == game.Players.LocalPlayer then return end
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = FindPlayer ( _string ).Character.HumanoidRootPart.CFrame
-end
-
-local function rejoin ( )
-    game.Players.LocalPlayer:Kick()
-    wait()
-    if #game.Players:GetPlayers() <= 1 then
-        game:GetService ( "TeleportService" ):Teleport ( game.PlaceId, game.Players.LocalPlayer )
-    else
-        game:GetService ( 'TeleportService' ):TeleportToPlaceInstance ( game.PlaceId, game.JobId, game.Players.LocalPlayer )
-    end
-end
-
-local function Hitbox ( )
-    for index, value in pairs ( workspace:GetDescendants ( ) ) do
-        if value:IsA ( "BasePart" ) and value.Transparency <= 0 or value:IsA ( "Part" ) and value.Transparency <= 0 then
-        local SelectionBox = Instance.new ( "SelectionBox" )
-        SelectionBox.Parent = value
-        SelectionBox.Color3 = Color3.fromRGB ( 201, 248, 255 )
-        SelectionBox.LineThickness = 0.015
-        SelectionBox.Adornee = value
-    
-        elseif value:IsA ( "BasePart" ) and value.Transparency > 0 or value:IsA ( "Part" ) and value.Transparency > 0 then
-            local SelectionBox = Instance.new ( "SelectionBox" )
-            SelectionBox.Parent = value
-            SelectionBox.Color3 = Color3.fromRGB ( 255, 201, 252 )
-            SelectionBox.LineThickness = 0.015
-            SelectionBox.Adornee = value
-        end
-    end
-end
-
-local function PotatoMode ( )
-    game.Lighting.FogEnd = math.huge
-	game.Lighting.Ambient = Color3.fromRGB ( 255, 255, 255 )
-	game.Lighting.GlobalShadows = false
-
-    for index, value in pairs ( workspace:GetDescendants ( ) ) do
-        if value:IsA ( "Part" ) or value:IsA ( "BasePart" ) then value.Material = Enum.Material.SmoothPlastic end
-        if value:IsA ( "Decal" ) then value:Destroy() end
-        if value:IsA ( "UnionOperation" ) then value.RenderFidelity = Enum.RenderFidelity.Performance; value.Material = Enum.Material.SmoothPlastic end
-        if value:IsA ( "Atmosphere" ) or value:IsA ( "Sky" ) or value:IsA ( "BloomEffect" ) or value:IsA ( "ColorCorrectionEffect" ) or value:IsA ( "BlurEffect" ) or value:IsA ( "DepthOfFieldEffect" ) or value:IsA ( "SunRaysEffect" ) then value:Destroy() end
-        if sethiddenproperty then sethiddenproperty(game.Lighting, "Technology", "Compatibility") end
-    end
-end
-
-local function ExtremePotatoMode ( )
-    game.Lighting.FogEnd = math.huge
-	game.Lighting.Ambient = Color3.fromRGB ( 255, 255, 255 )
-	game.Lighting.GlobalShadows = false
-
-    for index, value in pairs ( workspace:GetDescendants ( ) ) do
-        if value:IsA ( "Part" ) or value:IsA ( "BasePart" ) then value.Material = Enum.Material.SmoothPlastic; value.Shape = Enum.PartType.Block end
-        if value:IsA ( "Decal" ) then value:Destroy() end
-        if value:IsA ( "UnionOperation" ) then value:Destroy() end
-        if value:IsA ( "Atmosphere" ) or value:IsA ( "Sky" ) or value:IsA ( "BloomEffect" ) or value:IsA ( "ColorCorrectionEffect" ) or value:IsA ( "BlurEffect" ) or value:IsA ( "DepthOfFieldEffect" ) or value:IsA ( "SunRaysEffect" ) then value:Destroy() end
-        if sethiddenproperty then sethiddenproperty(game.Lighting, "Technology", "Compatibility") end
-        if value:IsA ( "Shirt" ) or value:IsA ( "Pants" ) or value:IsA ( "Accessory" ) then value:Destroy() end
-        if value:IsA ( "Beam" ) or value:IsA ( "Explosion" ) or value:IsA ( "Fire" ) or value:IsA ( "ParticleEmitter" ) or value:IsA ( "Sparkles" ) or value:IsA ( "Trail" ) then value:Destroy() end
-        if value:IsA ( "BlockMesh" ) or value:IsA ( "SpecialMesh" ) then value:Destroy() end
-        if value:IsA ( "Texture" ) then value:Destroy()
-    end
-    if workspace.CurrentCamera:FindFirstChildWhichIsA ( "Clouds" ) then workspace:FindFirstChildWhichIsA ( "Clouds" ):Destroy() end
-    for index, value in pairs ( game.Players:GetPlayers() ) do
-        for _, value2 in pairs ( value.Character:GetDescendants ( ) ) do
-            if value2:IsA ( "Shirt" ) or value2:IsA ( "Pants" ) or value2:IsA ( "Accessory" ) then value2:Destroy() end
-        end
-    end
-end
-end
-
-local function Gravity ( int )
-	workspace.Gravity = tonumber ( int )
-end
-
-local function FireClickDetectors ( )
-	for index, value in pairs ( workspace:GetDescendants( ) ) do
-		if value:IsA ( "ClickDetector" ) then fireclickdetector ( value ) end
+	
+	-- check to see if its $random which means select a random player
+	-- using $ for the rare cases the player has 'random' in their name
+	local plrnm: string = string.gsub(playername, '%$', '', 1)
+	if plrnm == 'random' then
+		-- get all players
+		local getplayers = PLAYERS:GetPlayers()
+		-- use math.random to select a random index starting from 1 to the length of getplayers
+		local random_index = math.random(1,#getplayers)
+		local player = getplayers[random_index]
+		table.insert (name, player.Name)
+		table.insert (obj, player)
+		plrnm = nil
+		return name, obj
 	end
-end
 
-local function SetCreatorId ( )
-	game.Players.LocalPlayer.UserId = game.CreatorId
-end
-
-local function View ( player )
-	if FindPlayer ( player ) then workspace.CurrentCamera.CameraSubject = FindPlayer ( player ).Character.Humanoid end
-end
-
-local function Unview ( )
-	workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
-end
-
-local function LoopDay ( ... )
-	local arguments = { ... } -- [1] = <opcional> segundos
-	if arguments[1] then
-		day_loop = game:GetService("RunService").RenderStepped:Connect( function ( )
-			game.Lighting.ClockTime = 14.5
-		end)
-
-		coroutine.create( coroutine.resume ( function ()
-			wait ( tonumber(arguments[1]) )
-			day_loop:Disconnect()
-		end))
-
-		table.insert ( events, "loopday 1" )
-		
-	else
-		day_loop = game:GetService("RunService").RenderStepped:Connect( function ( )
-			game.Lighting.ClockTime = 14.5
-		end)
-		table.insert ( events, "loopday 0" )
+	local playernames = string.split (playername, ',')
+	for key, player in pairs (PLAYERS:GetPlayers()) do
+		for index, value in pairs (playernames) do
+			if string.lower (player.Name):match ("^" .. string.lower(value)) or
+			string.lower(player.Character.Humanoid.DisplayName):match("^" .. string.lower(value)) then
+				table.insert (name, player.Name)
+				table.insert (obj, player)
+			end
+		end
 	end
-end
 
-local function UnLoopDay ( )
-	if table.find ( events,  "loopday 0" ) or table.find (events, "loopday 1") then day_loop:Disconnect() end
-end
-
-local function LoopNight ( ... )
-	local arguments = { ... } -- [1] = <opcional> segundos
-	if arguments[1] then
-		day_loop = game:GetService("RunService").RenderStepped:Connect( function ( )
-			game.Lighting.ClockTime = 0
-		end)
-
-		coroutine.create( coroutine.resume ( function ()
-			wait ( tonumber(arguments[1]) )
-			day_loop:Disconnect()
-		end))
-
-		table.insert ( events, "loopnight 1" )
-		
-	else
-		day_loop = game:GetService("RunService").RenderStepped:Connect( function ( )
-			game.Lighting.ClockTime = 0
-		end)
-		table.insert ( events, "loopnight 0" )
+	-- if everyone then just return every name and instance
+	if playername == 'all' then
+		for index, value in ipairs (PLAYERS:GetPlayers()) do
+			table.insert (name, value.Name)
+			table.insert (obj, value)
+		end
+		return name, obj
 	end
-end
-
-local function UnLoopNight ( )
-	if table.find ( events,  "loopnight 0" ) or table.find ( events, "loopnight 1" ) then day_loop:Disconnect() end
-end
-
-local function IsR15()
-	if game.Players.LocalPlayer.Character.Humanoid.RigType == Enum.HumanoidRigType.R15 then
-		return 1; else return 0; end
-end
-
-local function Halve ( )
-	if ISR15() == 1 then game.Players.LocalPlayer.Character.LowerTorso.WaistRigAttachment:Destroy() end
-end
-
-local function InfJump ( )
-	getgenv().infinite_jump = game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessedEvent)
-		if input == Enum.KeyCode.Space and not gameProcessedEvent then
-            game.Players.LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
-	end)
-	table.insert ( events, "infinite_jump" )
-end
-
-local function NoInfJump ( )
-	if table.find ( events, "infinite_jump" ) then
-        getgenv().infinite_jump:Disconnect()
-        table.remove ( events, table.find( events, "infinite_jump" ) )
-    end
-end
-
-local function NoSit ( )
-	getgenv().nosit = game:GetService("RunService").RenderStepped:Connect(function()
-		if game.Players.LocalPlayer.Character.Humanoid:GetState() == Enum.HumanoidStateType.Seated then game.Players.LocalPlayer.Character.Humanoid:ChangeState( Enum.HumanoidStateType.Jumping ) end
-	end)
-	table.insert ( events, "nosit" )
-end
-
-local function UnNosit ( )
-	if table.find ( events, "nosit" ) then getgenv().nosit:Disconnect(); table.remove ( events, table.find ( events, "nosit" ) ) end
-end
-
-local function WalkTo ( _string )
-	getgenv().walkto = game:GetService("RunService").RenderStepped:Connect (function()
-		game.Players.LocalPlayer.Character.Humanoid:MoveTo ( FindPlayer ( _string ).Character.HumanoidRootPart.Position )
-	end)
-	table.insert ( events, "walkto" )
-end
-
-local function UnWalkto ( )
-	if table.find ( events, "walkto" ) then getgenv().walkto:Disconnect(); table.remove ( events, table.find ( events, "walkto" ) ) end
-end
-
-local function Commands ( )
-    local index = 0
-    for __, _ in pairs ( commands ) do index += 1 end;
-	print ( "Comandos: " .. tostring ( index ) )
-	for index, value in pairs ( commands ) do
-		print ( index )
+	
+	-- if others then return everyone except you
+	if playername == 'others' then
+		for index, value in ipairs (PLAYERS:GetPlayers()) do
+			-- continue makes this one be skipped
+			if value == LOCALPLAYER then
+				continue
+			end
+			table.insert (name, value.Name)
+			table.insert (obj, value)
+		end
+		return name, obj
 	end
-    Notify ("Press F9 to view the commands", Color3.fromRGB(30,30,30), 18)
+
+	if playername == 'me' then
+		table.insert (name, LOCALPLAYER.Name)
+		table.insert (obj, LOCALPLAYER)
+		return name, obj
+	end
+
+	-- find the player and return it
+	for index, value in ipairs (PLAYERS:GetPlayers()) do
+		if string.lower (value.Name):match ("^" .. string.lower (playername)) then
+			table.insert (name, value.Name)
+			table.insert (obj, value)
+		end
+	end
+
+	for index, value in ipairs (PLAYERS:GetPlayers()) do
+		if string.lower (value.DisplayName):match ("^" .. string.lower(playername)) or
+		string.lower(value.Character.Humanoid.DisplayName):match("^" .. string.lower(playername)) then
+			table.insert (name, value.Name)
+			table.insert (obj,value)
+		end
+	end
+	
+	return name, obj
 end
 
-local function ShiftSpeed ( int )
-    table.insert ( events, "imspeed" )
-    getgenv().shift = game:GetService ( "UserInputService" ).InputBegan:Connect (function(input, gameProcessedEvent)
-        if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = int end
-    end)
-    getgenv().shift_end = game:GetService( "UserInputService" ).InputEnded:Connect (function(input, gameProcessedEvent)
-        if input == Enum.KeyCode.LeftShift and not gameProcessedEvent then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16 end
-    end)
-end
-
-local function UnShiftSpeed ( )
-    if table.find ( events, "imspeed" ) then getgenv().shift:Disconnect(); getgenv().shift_end:Disconnect() end
-end
-
-local function Spam ( _string )
-    local event = game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest
-    getgenv().spam = true
-    while wait ( getgenv ( ).spamspeed ) and getgenv().spam == true do
-        event:FireServer ( _string, "All" )
-    end
-
-    table.insert ( events, "spam" )
-end
-
-local function PMSpam ( _string2, _string )
-    local event = game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest
-    getgenv().pmspam = true
-    while wait ( getgenv ( ).spamspeed ) and getgenv().pmspam == true do
-        event:FireServer ( _string2, FindPlayer ( _string ) )
-    end
-    table.insert ( events, "pmspam" )
-end
-
-local function SpamSpeed ( int )
-    getgenv().spamspeed = int
-end
-
-local function UnSpam ( )
-    if getgenv ( ).spam or table.find ( events, "spam" ) then
-        getgenv().spam = false
-        table.remove ( events, table.find ( events, "spam" ) )
-    end
-end
-
-local function UnPMSpam ( )
-    if getgenv ( ).spam or table.find ( events, "pmspam" ) then
-        getgenv().pmspam = false
-        table.remove ( events, table.find ( events, "pmspam" ) )
-    end
-end
-
-local function NoRotate ( )
-    game.Players.LocalPlayer.Character.Humanoid.AutoRotate = false
-end
-
-local function UnNoRotate ( )
-    game.Players.LocalPlayer.Character.Humanoid.AutoRotate = true
-end
-
-local function Bhop ( )
-    if getgenv().bhop or table.find ( events, "bhop" ) then return end
-    getgenv().bhop = game:GetService ( "RunService" ).Stepped:Connect(function()
-        if game.Players.LocalPlayer.Character.Humanoid.FloorMaterial ~= Enum.Material.Air then RunCMD ( "jump" ) end
-    end)
-    table.insert( events, "bhop" )
-end
-
-local function StopBhop( )
-    if getgenv().bhop or table.find ( events, "bhop" ) then
-        getgenv().bhop:Disconnect()
-        table.remove ( events, table.find ( events, "bhop" ) )
-    end
-end
-
-local function DeleteHats ( )
-    game.Players.LocalPlayer.Character.Humanoid:RemoveAccessories()
-end
-
-local function DropHats ( )
-    for index, value in pairs ( game.Player.LocalPlayer.Character.Humanoid:GetAccessories ( ) ) do
-        value.Parent = workspace
-    end
-end
-
-local function SpamDecal ( assetID )
-
-    local function CreateDecal ( part, face )
-        local decal = Instance.new ( "Decal" )
-        decal.Parent = part
-        decal.Color3 = Color3.fromRGB ( 0, 0, 0 )
-        decal.Texture = "http://www.roblox.com/asset/?id=" .. toumber ( assetID )
-        decal.Transparency = 0
-        decal.Face = face
-        decal.Name = game:GetService ( "HttpService" ):GenerateGUID ( false )
-    end
-
-    for index, value in pairs ( workspace:GetDescendants ( ) ) do
-        if not value:IsA ( "Part" ) or not value:IsA ( "BasePart" ) then return end
-        --[[
-        CreateDecal ( value, Enum.NormalId.Top )
-        CreateDecal ( value, Enum.NormalId.Bottom )
-        CreateDecal ( value, Enum.NormalId.Left )
-        CreateDecal ( value, Enum.NormalId.Right )
-        CreateDecal ( value, Enum.NormalId.Back )
-        CreateDecal ( value, Enum.NormalId.Front )
-        ]]
-        for i,v in pairs (Enum.NormalId) do
-            CreateDecal (value, i)
-        end
-    end
-end
-
-local function SpamTextures ( assetID, StudsPerTileU, StudsPerTileV )
-
-    local function CreateTexture ( part, face, StudsPerTileU, StudsPerTileV )
-        local texture = Instance.new ( "Texture" )
-        texture.Parent = part
-        texture.Color3 = Color3.fromRGB ( 0, 0, 0 )
-        texture.Texture = "http://www.roblox.com/asset/?id=" .. tonumber ( assetID )
-        texture.Transparency = 0
-        texture.Face = face
-        texture.Name = game:GetService ( "HttpService" ):GenerateGUID ( false )
-        texture.StudsPerTileU = StudsPerTileU
-        texture.StudsPerTileV = StudsPerTileV
-    end
-
-    for index, value in pairs ( workspace:GetDescendants ( ) ) do
-
-        CreateTexture ( value, Enum.NormalId.Top, StudsPerTileU, StudsPerTileV  )
-        CreateTexture ( value, Enum.NormalId.Bottom, StudsPerTileU, StudsPerTileV )
-        CreateTexture ( value, Enum.NormalId.Left, StudsPerTileU, StudsPerTileV )
-        CreateTexture ( value, Enum.NormalId.Right, StudsPerTileU, StudsPerTileV )
-        CreateTexture ( value, Enum.NormalId.Back, StudsPerTileU, StudsPerTileV )
-        CreateTexture ( value, Enum.NormalId.Front, StudsPerTileU, StudsPerTileV )
-
-    end
-
-end
-
-local function DestroyEverything (  )
-
-    for index, value in pairs ( workspace:GetChildren ( ) ) do
-        value:Destroy ( )
-    end
-
-end
-
-local function SetShirt ( assetID )
-
-    if game.Players.Character and game.Players.LocalPlayer.Character:FindFirstChild("Shirt") then
-        game.Players.LocalPlayer.Character:FindFirstChildWhichIsA ( "Shirt" ).ShirtTemplate = "http://www.roblox.com/asset/?id=" .. assetID
-        return
-    end
-    
-    Instance.new ( "Shirt", game.Players.LocalPlayer.Character )
-    game.Players.LocalPlayer.Character:FindFirstChildWhichIsA ( "Shirt" ).ShirtTemplate = "http://www.roblox.com/asset/?id=" .. assetID
-end
-
-local function SetPants ( assetID )
-    if game.Players.Character and game.Players.LocalPlayer.Character:FindFirstChild("Pants") then
-        game.Players.LocalPlayer.Character:FindFirstChildWhichIsA ( "Pants" ).PantsTemplate = "http://www.roblox.com/asset/?id=" .. assetID
-        return
-    end
-    
-    Instance.new ( "Pants", game.Players.LocalPlayer.Character )
-    game.Players.LocalPlayer.Character:FindFirstChildWhichIsA ( "Pants" ).PantsTemplate = "http://www.roblox.com/asset/?id=" .. assetID
-end
-
-local function HipHeight ( studs )
-
-    if not game.Players.LocalPlayer.Character then
-        game.Players.LocalPlayer.Character.CharacterAdded:Wait()
-        game.Players.LocalPlayer.Character.Humanoid.HipHeight = tonumber ( studs )
-        return
-    end
-    game.Players.LocalPlayer.Character.Humanoid.HipHeight = tonumber ( studs )
-end
-
-local function RequiresNeck ( bool )
-
-    if not game.Players.LocalPlayer.Character then game.Players.LocalPlayer.Character.CharacterAdded:Wait(); RequiresNeck ( bool ) end
-    if bool == "true" then game.Players.LocalPlayer.Character.Humanoid.RequiresNeck = true; end
-    if bool == "false" then game.Players.LocalPlayer.Character.Humanoid.RequiresNeck = false; end
-
-end
-
-local function TakeDamage ( damage )
-
-    if not game.Players.LocalPlayer.Character then game.Players.LocalPlayer.Character.CharacterAdded:Wait(); TakeDamage ( damage ) end
-    game.Players.LocalPlayer.Character.Humanoid:TakeDamage ( tonumber ( damage ) )
-
-end
-
-local function Hell ( )
-
-    math.randomseed ( game.Players.LocalPlayer.UserId + (100 / 2 * 6 + 2 - 1) + (math.random ( 0, math.random ( 0, 49604212 ) ) * 0.5 ) - 6 )
-
-    if not game:IsLoaded() then game.Loaded:Wait(); end
-
-    for index, value in pairs ( workspace:GetDescendants ( ) ) do
-
-        local fire = Instance.new ( "Fire" )
-        fire.Parent = value
-        fire.Color = Color3.fromRGB ( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 ) )
-        fire.Heat = math.random ( 0, 69420 )
-        fire.Size = math.random ( 0, 69420 )
-        fire.SecondaryColor = Color3.fromRGB ( math.random ( 0, 255 ), math.random ( 0, 255 ), math.random ( 0, 255 ) )
-
-    end
-
-end
-
-local function runscript ( _script )
-
-    coroutine.resume ( coroutine.create ( function ( )
-    
-        local success, err = pcall ( loadstring ( _script ) ( ) ) -- probably not the most secure or fastest way possible
-        if success then return end;
-        if err then return end;
-
-    end ) )
-
-end
-
-local function filescript ( file )
-
-    local _script = readfile ( tostring ( file ) )
-    coroutine.resume ( coroutine.create ( function ( )
-        
-        local success, err = pcall ( loadstring ( _script ) ( ) )
-        if success then return end;
-        if err then return end;
-    end ) )
-
-end
-
-local function persistafterteleport ( )
-
-    local _script = [[pcall ( function ( )
-        local r = request ( {
-            Url = "https://raw.githubusercontent.com/GTX1O8OTi/creamfood/developer/rewrite.lua",
-            Method = "GET"
-        } )
-        loadstring ( r.Body ) ( )
-    end )]]
-    queue_on_teleport ( _script )
-    Notify ("Contact navet#2416 if it doesnt work", Color3.fromRGB(30,30,30), 18)
-end
-
-local function simradius ( ... )
-    local arguments = { ... }
-
-    pcall ( function ( )
-    
-        if not table.find ( events, "simradius" ) then table.insert ( events, "simradius" ) end;
-        if arguments[1] ~= nil and tonumber ( arguments [1] ) > 0 then
-    
-            getgenv().simradius = game:GetService ( "RunService" ).RenderStepped:Connect ( function ( )
-                setsimulationradius ( tonumber( arguments [1] ) )
-            end );
-    
-        else
-    
-            getgenv().simradius = game:GetService ( "RunService" ).RenderStepped:Connect ( function ( )
-                setsimulationradius ( math.huge )
-            end );
-    
-        end
-
-    end)
-
-end
-
-local function unsimradius ( )
-
-    if not table.find ( events, "simradius" ) then return end;
-    table.remove ( events, table.find ( events, "simradius" ) )
-    if getgenv ( ).simradius then getgenv ( ).simradius:Disconnect ( ) end;
-
-end
-
-local function movedir ( )
-    if table.find ( events, "movedirection" ) then return end;
-    table.insert ( events, "movedirection" )
-    getgenv ( ).movedirection = game:GetService ( "RunService" ).RenderStepped:Connect ( function ( )
-        if game.Players.LocalPlayer.Character.Humanoid.MoveDirection.Magnitude > 0 then
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * game.Players.LocalPlayer.Character.Humanoid.MoveDirection
-        end
-    end)
-
-end
-
-getgenv ( ).waypoints = { }
-local function MakeWaypoint ( name )
-    
-    getgenv ( ).waypoints [ name ] = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame;
-
-    Notify ("cmon bro, give it a name", Color3.fromRGB(30,30,30), 18)
-
-end
-
-local function GotoWaypoint ( name )
-
-    local found = false
-    for index, value in pairs ( getgenv ( ).waypoints ) do
-
-        if tostring ( index ) == name then game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = value; found = true break end;
-
-    end
-    if not found then Notify ("No waypoint found", Color3.fromRGB(150,150,150), 18) end
-    found = false
-
-end
-
-local function DeleteWaypoints ( name )
-
-    print ( name )
-    table.remove ( getgenv ( ).waypoints, table.find ( getgenv ( ).waypoints, name ) ) -- tf does this not work?
-
-    Notify ("No waypoint found", Color3.fromRGB(150,150,150), 18)
-
-end
-
-local function ClearWaypoints ( name )
-
-    table.clear ( getgenv ( ).waypoints )
-
-end
-
-local function printwaypoints ( )
-
-    for index, value in pairs ( getgenv ( ).waypoints ) do
-
-        print ( index )
-
-    end
-
-end
-
-local function WalkToWaypoint ( name )
-
-    for index, value in pairs ( getgenv ( ).waypoints ) do
-        if tostring ( index ) == name then game.Players.LocalPlayer.Character.Humanoid:MoveTo ( value.Position ) end;
-    end
-
-    Notify ("No waypoint found", Color3.fromRGB(150,150,150), 18)
-end
-
-local function chat ( ... )
-
-    local arguments = { ... }
-    if arguments [1] ~= nil and arguments [2] then
-    game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer ( arguments [1], arguments [2] )
-    elseif arguments [1] ~= nil then game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer ( arguments [1], "All") end;
-
-end
-
-local function changefov ( fov )
-
-    if tonumber ( fov ) <= 0 then return end
-    workspace.CurrentCamera.FieldOfView = tonumber ( fov )
-
-end
-
-local function zoom ( distance )
-
-    workspace.CurrentCamera.Zoom = tonumber ( distance )
-
-end
-
-local function globalshadows ( ... )
-
-    local args = { ... }
-    local bool = args [1]
-
-    if bool == "on" or bool == "1" then game.Lighting.GlobalShadows = true return end;
-    if bool == "off" or bool == "0" then game.Lighting.GlobalShadows = false return end;
-    if not bool then return end;
-
-end
-
-local function printuserid ( player )
-    local user = FindPlayer (player)
-    if user then
-        print (user.UserId)
-    end
-end
-
-local function copyuserid ( player )
-
-    local user = FindPlayer (player)
-    if user then
-        setclipboard (player.UserId)
-    end
-
-end
-
-getgenv ( ).disabledguis = { }
-local function nogui ( )
-
-    for index, value in pairs ( game.Players.LocalPlayer.PlayerGui:GetChildren ( ) ) do
-
-        if value.Enabled == false then table.insert ( getgenv ( ).disabledguis, value.Name ); end
-        value.Enabled = false
-
-    end
-end
-
-local function yesgui ( )
-
-    for index, value in pairs ( game.Players.LocalPlayer.PlayerGui:GetChildren ( ) ) do
-        
-        if table.find (getgenv ( ).disabledguis, value.Name ) then table.remove ( getgenv ( ).disabledguis, table.find ( getgenv ( ).disabledguis, value.Name ) ); continue end;
-        value.Enabled = true
-
-    end
-
-end
-
-local function SaveWaypoints ( )
-
-    local HTTPService = game:GetService ( "HttpService" )
-    
-    local ttable = {}
-    for index, value in pairs ( getgenv ( ).waypoints ) do
-        table.insert ( ttable, {
-            name = index,
-            pos = tostring ( value )
-        })
-    end
-    
-    local Encoded = HTTPService:JSONEncode ( ttable )
-    writefile ( "creamfood-waypoints.txt", Encoded )
-
-end
-
-local function LoadWaypoints ( )
-
-    local HTTPService = game:GetService ( "HttpService" )
-    local Encoded = HTTPService:JSONDecode ( readfile ( "creamfood-waypoints.txt" ) )
-
-    for index, value in pairs ( Encoded ) do
-
-        table.insert ( getgenv ( ).waypoints, value.name )
-        local stocf = CFrame.new ( table.unpack ( value.pos:gsub (" ", ""):split (",") ) ) -- lembrete pra mim mesmo: aprender mais sobre strings
-        getgenv ( ).waypoints [ value.name ] = stocf
-
-    end
-
-end
-
-getgenv().predictedTime = 0.3
-local function SetPredictTime (time)
-    getgenv().predictedTime = tonumber (time)
-end
-
-function LinearPrediction (instance)
-    local Pathfinding = game:GetService("PathfindingService")
-    local part = Instance.new ("Part")
-    part.CanCollide = false
-    part.Anchored = true
-    part.Size = Vector3.new(1,1,1)
-    part.Parent = instance
-    coroutine.wrap(function()
-        game:GetService("RunService").Stepped:Connect(function(t, delta)
-            local currentPosition = instance.Position
-            local currentVelocity = instance.AssemblyLinearVelocity
-            local currentOrientation = instance.Orientation
-            local predictedPosition = currentPosition + currentVelocity * delta *workspace.Gravity * getgenv().predictedTime
-            
-            part.Position = predictedPosition
-            part.Orientation = currentOrientation
-        end)
-    end)()
-end
-
-local function PredictAll ()
-    for index, value in pairs (game.Players:GetPlayers()) do
-        --if value.Name ~= game.Players.LocalPlayer.Name then
-            LinearPrediction(value.Character.HumanoidRootPart)
-        --end
-    end
-end
-
-
-local function ComputePath ( instance )
-    -- https://create.roblox.com/docs/reference/engine/classes/Path
-    local pathfinding = game:GetService ("PathfindingService")
-
-    local path = pathfinding:CreatePath ({
-        AgentRadius = 2.0,
-        AgentHeight = 5.0,
-        AgentCanJump = true,
-    })
-
-    local waypoints
-
-    local success, result = pcall (function()
-        path:ComputeAsync (LOCALPLAYER.Character.HumanoidRootPart.Position, instance.Position)
-    end)
-
-    if success and path.Status == Enum.PathStatus.Success then
-        waypoints = path:GetWaypoints()
-    end
-
-    return waypoints, path
-end
-
-local function PathGoto (name)
-
-    local pHumanoid = LOCALPLAYER.Character:FindFirstChildWhichIsA ("Humanoid")
-    local player = FindPlayer (name)
-
-    if player.Character and player.Character:FindFirstChildWhichIsA("Humanoid") and player.Character.Humanoid.Health > 0 then
-        local waypoints, path = ComputePath (player.Character.HumanoidRootPart)
-
-        local nextWaypointIndex, reachedConnection, blockedConnection = 2,nil,nil
-
-        blockedConnection = path.Blocked:Connect (function (blockedWaypointIndex)
-            if blockedWaypointIndex >= nextWaypointIndex then
-                path.Unblocked:Wait()
-                --blockedConnection:Disconnect()
-            end
-        end)
-
-        if not reachedConnection then
-            reachedConnection = pHumanoid.MoveToFinished:Connect (function (reached)
-                if reached and nextWaypointIndex < #waypoints then
-                    nextWaypointIndex += 1
-                    pHumanoid:MoveTo (waypoints [nextWaypointIndex].Position)
-                else
-                    reachedConnection:Disconnect()
-                    blockedConnection:Disconnect()
+local function runcmd (cmd: string): boolean
+	local list = {}
+
+	for word in string.gmatch (cmd, "%g+") do
+		table.insert (list, tostring(word))
+	end
+
+	local command = string.lower(list[1])
+
+	local arguments = {}
+
+	-- if the command is not on the table commands
+	-- make a loop to see if it is on the alias table
+	if not commands[command] then
+        for key, value in pairs (commands) do
+            if typeof (value.alias) == 'table' then
+                    for index, val in pairs (value.alias) do
+                    if val == command then command = index end
                 end
-            end)
-
-        end
-
-        LOCALPLAYER.Character.Humanoid:MoveTo (waypoints [nextWaypointIndex].Position)
-    end
-    
-end
-
-local function PFGoto (instance)
-    local Pathfinding = game:GetService("PathfindingService")
-
-    local player = game.Players.LocalPlayer
-    local humanoid = player.Character:FindFirstChild ("Humanoid")
-
-    local path = Pathfinding:CreatePath ({
-        AgentRadius = 0.5,
-        AgentHeight = 2,
-        AgentCanJump = true,
-    })
-
-    local waypoints, nextWaypointIndex, reachedConnection, blockedConnection
-
-    local function Follow (dest)
-        local success, err = pcall (function ()
-            path:ComputeAsync (player.Character.HumanoidRootPart.Position, dest)
-        end)
-
-        if success and path.Status == Enum.PathStatus.Success then
-            waypoints = path:GetWaypoints()
-
-            blockedConnection = path.Blocked:Connect (function (blockedWaypointIndex)
-                if blockedWaypointIndex >= nextWaypointIndex then
-                    blockedConnection:Disconnect()
-                    follow (dest)
-                end
-            end)
-
-            if not reachedConnection then
-                reachedConnection = humanoid.MoveToFinished:Connect (function (reached)
-                    if reached and nextWaypointIndex < #waypoints then
-                        nextWaypointIndex += 1
-                        humanoid:MoveTo (waypoints [nextWaypointIndex].Position)
-                    else
-                        reachedConnection:Disconnect()
-                        blockedConnection:Disconnect()
-                    end
-                end)
             end
 
-            nextWaypointIndex = 2
-            humanoid:MoveTo (waypoints [nextWaypointIndex].Position)
+            if typeof(value.alias) == 'string' then
+                if value.alias == command then command = key end
+            end
         end
-    end
+		table.foreachi (commands, function(index, value)
+			table.foreach (value.alias, function(key, val)
+				if val == command then
+					command = index
+				end
+			end)
 
-    Follow(instance)
-end
+			if value.alias == command then
+				command = index
+			end
+		end)
+	end
 
-function Bot()
+    if not commands[command] then return end
 
-    if table.find ( events, "bot" ) then return end
-    local players = game.Players:GetPlayers ()
-    local player = players[math.random (1,#players)]
-
-    function randomPlayer ()
-        player = players[math.random (1,#players)]
-
-        if player.Team ~= game.Players.LocalPlayer.Team then
-            randomPlayer()
-        end
-
-        return
-    end
-
-    table.insert ( events, "bot" )
-    
-    getgenv ().bot = game:GetService ("RunService").RenderStepped:Connect (function ()
-        if player and player.Character then
-            if game.Players.LocalPlayer.Character.Humanoid.MoveDirection.Magnitude > 0 then
-                -- do nothing
+    for key, value in pairs (commands[command]) do
+        if key == 'needs_player' and value == true then
+            arguments.playernames,arguments.playerobjects = findplayer(list[2])
+		    arguments.text = table.concat(list, ' ', 3)
             else
-                -- not moving
-                PFGoto ( player.Character.HumanoidRootPart.Position )
-                if player.Character.Humanoid.Health == 0 then
-                    randomPlayer()
-                    PFGoto()
-                end
-
-            end
-        else
-            randomPlayer()
-        end
-    end)
-end
-
-local function stopBot()
-    if table.find ( events, "bot" ) and getgenv().bot then
-        getgenv().bot:Disconnect()
-        table.remove (events, table.find (events, "bot"))
-    end
-end
-
-local function pffindgoto (name)
-    local player = FindPlayer (name)
-    if player and player.Character then
-        PFGoto (player.Character.HumanoidRootPart.CFrame)
-    end
-end
-
-local function removecmd (cmd)
-    if table.find ( commands, cmd ) then
-        table.remove (commands, table.find (commands, cmd))
-    end
-end
-
-local function addplugin (name)
-    if not loadfile then Notify ("Your exploit doesn't have loadfile", Color3.fromRGB(200,0,0), 18) return end
-    local plugin = loadfile(name)()
-    if plugin then
-        table.insert ( plugins, plugin.Name )
-
-        for index,value in pairs (plugin.Commands) do
-            addcmd ( index, plugin.Alias, value )
-            setfenv(value, getfenv())
-        end
-
-        Notify (plugin.Name .. " loaded successfully", Color3.fromRGB(100,200,100), 18)
-    else
-        Notify ("Couldn't find plugin!", Color3.fromRGB(200,0,0), 18)
-    end
-end
-
-local function removeplugin (name)
-    if not loadfile then Notify ("Your exploit doesn't have loadfile", Color3.fromRGB(200,0,0), 18) return end
-    local plugin = loadfile(name)()
-    if plugin then
-        table.remove ( plugins, table.find ( plugins, plugin.Name ) )
-
-        for index,value in pairs (plugin.Commands) do
-            table.remove ( commands, table.find ( commands, index ) )
-        end
-
-        Notify (plugin.Name .. " unloaded successfully", Color3.fromRGB(100,200,100), 18)
-    else
-        Notify ("Couldn't find plugin!", Color3.fromRGB(200,0,0), 18)
-    end
-end
-
-local function PrintAlias()
-    for index, value in pairs (alias) do
-        print(index)
-    end
-end
-
-local function PrintPlugins ()
-    for index, value in pairs (plugins) do
-        print(value)
-    end
-end
-
-function closestplayer()
-    local closest
-    for index, value in pairs ( game.Players:GetPlayers() ) do
-        if value.Character.HumanoidRootPart.Position.Magnitude <= closest.Character.HumanoidRootPart.Position.Magnitude then
-            closest = value
+            arguments.text = table.concat (list, ' ', 2)
         end
     end
 
-    return closest
+	local success, result = pcall ( coroutine.wrap (function ()
+		-- run the command with 'arguments' being a table
+		-- if the command doesnt need a player then arguments[1]
+		-- is a string or else arguments[3]
+
+		-- if the command needs a player then
+		-- argument[1] is a table with the player(s) name(s)
+		-- argument[2] is a table with the player(s) instance(s)
+		-- argument[3] is the rest of the argument
+		commands[command].func (arguments)
+		table.clear (list)
+		table.clear (arguments)
+	end) )
+	return success, result
 end
 
-local function highgraphics ()
-    local folder_name = "city" -- can be 'city' or 'room'
-
-    getgenv().environment = true
-    
-    local function load(folder)
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/setcvar/Graphics/main/"..folder.."/script.lua"))()
-    end
-    
-    load(folder_name)
-end
-
-local function CMDHistory ()
-    print(table.concat(command_history, " "))
-end
-
-local function chatage (player)
-    local player = FindPlayer(player)
-    game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer (player.Name .. ' is '.. player.AccountAge .. 'days old', 'All')
-end
-
--- // commands
-addcmd ( "print", "p", _print )
-addcmd ( "speed", "ws" , walkspeed )
-addcmd ( "jumppower", "jp",  jumppower)
-addcmd ( "setmaxfps", "",  setmaxfps)
-addcmd ( "antiafk", "", antiafk )
-addcmd ( "unantiafk", "", unantiafk )
-addcmd ( "spin", "", spin )
-addcmd ( "unspin", "", unspin )
-addcmd ( "clearevents", "", clearevents )
-addcmd ( "noclip", "nc", noclip )
-addcmd ( "clip", "", clip )
-addcmd ( "jump", "", jump )
-addcmd ( "sit", "", sit )
-addcmd ( "colorful_world", "", colorful_world )
-addcmd ( "drugs", "", drugs )
-addcmd ( "chatlog", "clog", chatlog_everyone )
-addcmd ( "savechatlog", "saveclog", save_chatlogs )
-addcmd ( "goto", "to", _goto )
-addcmd ( "hitbox", "hbox", Hitbox )
-addcmd ( "potato", "ptt", PotatoMode )
-addcmd ( "extremepotato", "eptt", ExtremePotatoMode )
-addcmd ( "highgraphics", "hg" , highgraphics)
-addcmd ( "rejoin", "rj", rejoin )
-addcmd ( "loopday", "ld", LoopDay )
-addcmd ( "unloopday", "unld", UnLoopDay )
-addcmd ( "view","", View )
-addcmd ( "unview", "", Unview )
-addcmd ( "loopnight", "ln", LoopNight )
-addcmd ( "unloopnight", "unln", UnLoopNight )
-addcmd ( "halve", "", Halve )
-addcmd ( "infjump", "", InfJump )
-addcmd ( "noinfjump", "", NoInfJump )
-addcmd ( "nosit", "", NoSit )
-addcmd ( "walkto", "", WalkTo )
-addcmd ( "unnosit","nnsit", UnNosit )
-addcmd ( "unwalkto", "", UnWalkto )
-addcmd ( "cmds", "help", Commands )
-addcmd ( "shiftspeed", "sspeed", ShiftSpeed )
-addcmd ( "unshiftspeed", "unsspeed", UnShiftSpeed )
-addcmd ( "setcreatorid", "creatorid", SetCreatorId )
-addcmd ( "spam", "", Spam )
-addcmd ( "pmspam", "", PMSpam )
-addcmd ( "unspam", "", UnSpam )
-addcmd ( "unpmspam", "", UnPMSpam )
-addcmd ( "spamspeed", "", SpamSpeed )
-addcmd ( "bhop", "", Bhop )
-addcmd ( "stopbhop", "", StopBhop )
-addcmd ( "deletehats", "delhats", DeleteHats )
-addcmd ( "drophats","dhats", DropHats )
-addcmd ( "spamdecals", "", SpamDecal )
-addcmd ( "spamtextures", "", SpamTextures )
-addcmd ( "destroyeverything", "clean", DestroyEverything )
-addcmd ( "setshirt", "changeshirt", SetShirt )
-addcmd ( "setpants", "changepants", SetPants )
-addcmd ( "hipheight", "hh", HipHeight )
-addcmd ( "requiresneck", "", RequiresNeck )
-addcmd ( "hell", "", Hell )
-addcmd ( "runscript", "rs", runscript )
-addcmd ("filescript", "runfile", filescript )
-addcmd ( "persistafterteleport", "persisttp", persistafterteleport )
-addcmd ( "simradius", "", simradius )
-addcmd ( "unsimradius", "", unsimradius )
-addcmd ( "movedir", "", movedir )
-addcmd ( "makewaypoint", "mkwp", MakeWaypoint )
-addcmd ( "deletewaypoint", "delwp", DeleteWaypoints )
-addcmd ( "gotowaypoint", "gotowp", GotoWaypoint )
-addcmd ( "clearwaypoints", "clearwp", ClearWaypoints )
-addcmd ( "walktowaypoint", "walktowp", WalkToWaypoint )
-addcmd ( "chat", "say", chat )
-addcmd ( "fov", "changefov", changefov )
-addcmd ( "zoom", "", zoom )
-addcmd ( "globalshadows", "gshadows", globalshadows )
-addcmd ( "printuserid", "pid", printuserid )
-addcmd ( "copyuserid", "cid", copyuserid )
-addcmd ( "nogui", "", nogui )
-addcmd ( "yesgui", "restoregui", yesgui )
-addcmd ( "savewaypoints", "savewp", SaveWaypoints )
-addcmd ( "loadwaypoints", "loadwp", LoadWaypoints )
-addcmd ( "printwaypoints", "printwp", printwaypoints )
-addcmd ( "predictall","", PredictAll )
-addcmd ( "setpredicttime", "", SetPredictTime )
-addcmd ( "walkbot","", Bot )
-addcmd ( "pgoto", "", pffindgoto )
-addcmd ( "stopbot","", stopBot )
-addcmd ( "removecmd", "", removecmd )
-addcmd ( "addplugin", "plugin", addplugin )
-addcmd ( "removeplugin", "removep", removeplugin )
-addcmd ( "printalias", "", PrintAlias )
-addcmd ( "printplugins", "", PrintPlugins )
-addcmd ( "test","", PathGoto )
-addcmd ( "history","", CMDHistory )
-addcmd ( 'chatage', '', chatage )
--- // commands
-local HttpService = game:GetService("HttpService")
-
-local country = game:GetService("LocalizationService").RobloxLocaleId
-
-if country == "en-us" then
-    Notify ("Use 'cmds' to view the commands", Color3.fromRGB(30,30,30), 18)
-    Notify ("Making a new ui for it soon, use F9 to see the commands", Color3.fromRGB(255,255,255), 18)
-elseif country == "pt-br" then
-    Notify ("Use 'cmds' para ver os comandos", Color3.fromRGB(255, 255, 255), 18)
-    Notify ( "Fazendo uma nova ui em breve, use F9 para ver os comandos", Color3.fromRGB(255,255,255), 18 )
-end
-
-local ScreenGui = Instance.new ("ScreenGui")
+local ScreenGui: ScreenGui = Instance.new ("ScreenGui")
+GUI = ScreenGui
 ScreenGui.Parent = gethui() or game.CoreGui
+ScreenGui.ResetOnSpawn = false
 
-local Frame = Instance.new ("Frame")
+local Frame: Frame = Instance.new ("Frame")
 Frame.Parent = ScreenGui
 Frame.BackgroundColor3 = Color3.fromRGB (98, 220, 184)
 Frame.BorderSizePixel = 0
 Frame.Size = UDim2.new (0.295,0,0,35)
-Frame.Position = UDim2.new (0.35, 0--[[ScreenGui.AbsoluteSize.X/3]], 0.844, 0) -- 1920 / 3.5 achar soluçao melhor depois
---Frame.Position = UDim2.new (ScreenGui.AbsoluteSize.X/2 - Frame.Size.Offset.X/2, 0, 0.844,0) maybe?
+Frame.Position = UDim2.new (0.35, 0, 0.844, 0)
 
-local TextBox = Instance.new("TextBox")
+local TextBox: TextBox = Instance.new("TextBox")
 TextBox.Parent = Frame
 TextBox.BackgroundColor3 = Color3.fromRGB(30,30,30)
 TextBox.BorderSizePixel = 0
@@ -1373,24 +1403,25 @@ TextBox.PlaceholderText = "cmds"
 TextBox.TextColor3 = Color3.fromRGB (255,255,255)
 TextBox.Text = ""
 
-ScreenGui:GetPropertyChangedSignal ("AbsoluteSize"):Connect (function()
-    Frame.Position = UDim2.new ( 0.35, 0, 0.844,0 )
-    Frame.Size = UDim2.new (0.295,0,0,35)
-end)
+game:GetService ("ContextActionService"):BindAction (
+	"Focus",
+	function()
+		TextBox:CaptureFocus()
+		spawn (function()
+			repeat TextBox.Text = "" until TextBox.Text == ""
+		end)
+	end,
+	false,
+	Enum.KeyCode.RightBracket
+)
 
-local function FocusLost (enter)
-    if enter then
-        RunCMD (TextBox.Text)
-		TextBox.Text = ""
+TextBox.FocusLost:Connect (
+	function (key)
+		if key then
+			runcmd (TextBox.Text)
+			TextBox.Text = ""
+		end
 	end
-end
+)
 
-TextBox.FocusLost:Connect(FocusLost)
-
-local function Focus ()
-    TextBox:CaptureFocus()
-    game:GetService("RunService").RenderStepped:Wait()
-    TextBox.Text = ""
-end
-
-game:GetService("ContextActionService"):BindAction("Focus", Focus, false, Enum.KeyCode.RightBracket)
+Notify ('Use F9 to view commands for now')
