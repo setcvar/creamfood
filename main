@@ -1360,8 +1360,10 @@ local function runcmd (cmd: string): boolean
         if key == 'needs_player' and value == true then
             arguments.playernames,arguments.playerobjects = findplayer(list[2])
 		    arguments.text = table.concat(list, ' ', 3)
+			arguments.split = string.split (table.concat(list, ' ', 3), ' ')
             else
             arguments.text = table.concat (list, ' ', 2)
+			arguments.split = string.split(table.concat (list, ' ', 2), ' ')
         end
     end
 
