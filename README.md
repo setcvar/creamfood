@@ -1,5 +1,5 @@
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/GTX1O8OTi/creamfood/main/main")) ()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/setcvar/creamfood/main/main")) ()
 ```
 
 Example of plugin:
