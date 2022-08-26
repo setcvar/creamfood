@@ -1,6 +1,6 @@
 setthreadcontext(7)
 
-local commands = {}
+local commands: table = {}
 local alias = {}
 local events = {}
 local plugins = {}
@@ -80,7 +80,7 @@ function RunCMD (command)
 
             return success, result
         end
-
+        
         local success, result = pcall ( coroutine.wrap (function()
             commands[cmd] (table.concat(args, " "))
         end) )
@@ -239,7 +239,6 @@ local function drugs ( )
         game.Lighting.Atmosphere.Haze = math.random ( 0, 10 )
     end)
 end
-
 
 local lastMessage
 local function CreateChatLogMessage ( message, parent )
@@ -1232,7 +1231,7 @@ local function highgraphics ()
     getgenv().environment = true
     
     local function load(folder)
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/GTX1O8OTi/Graphics/main/"..folder.."/script.lua"))()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/setcvar/Graphics/main/"..folder.."/script.lua"))()
     end
     
     load(folder_name)
@@ -1240,6 +1239,11 @@ end
 
 local function CMDHistory ()
     print(table.concat(command_history, " "))
+end
+
+local function chatage (player)
+    local player = FindPlayer(player)
+    game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer (player.Name .. ' is '.. player.AccountAge .. 'days old', 'All')
 end
 
 -- // commands
@@ -1334,6 +1338,7 @@ addcmd ( "printalias", "", PrintAlias )
 addcmd ( "printplugins", "", PrintPlugins )
 addcmd ( "test","", PathGoto )
 addcmd ( "history","", CMDHistory )
+addcmd ( 'chatage', '', chatage )
 -- // commands
 local HttpService = game:GetService("HttpService")
 
