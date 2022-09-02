@@ -1238,44 +1238,36 @@ function Notify (...)
     })
 end
 
-function findplayer (playername: string): table
-	local name: table = {}
+local function alreadyontable (t, value)
+    for key, val in pairs (t) do
+        if val == value or key == value then return true else return false end
+    end
+end
+
+local function findplayer (playername: string): table
 	local obj: table = {}
 
 	
 	-- check to see if its $random which means select a random player
 	-- using $ for the rare cases the player has 'random' in their name
-	local plrnm: string = string.gsub(playername, '%$', '', 1)
+	local plrnm: string = string.gsub(playername, '%*', '', 1)
 	if plrnm == 'random' then
 		-- get all players
 		local getplayers = PLAYERS:GetPlayers()
 		-- use math.random to select a random index starting from 1 to the length of getplayers
 		local random_index = math.random(1,#getplayers)
 		local player = getplayers[random_index]
-		table.insert (name, player.Name)
 		table.insert (obj, player)
 		plrnm = nil
-		return name, obj
-	end
-
-	local playernames = string.split (playername, ',')
-	for key, player in pairs (PLAYERS:GetPlayers()) do
-		for index, value in pairs (playernames) do
-			if string.lower (player.Name):match ("^" .. string.lower(value)) or
-			string.lower(player.Character.Humanoid.DisplayName):match("^" .. string.lower(value)) then
-				table.insert (name, player.Name)
-				table.insert (obj, player)
-			end
-		end
+		return obj
 	end
 
 	-- if everyone then just return every name and instance
 	if playername == 'all' then
 		for index, value in ipairs (PLAYERS:GetPlayers()) do
-			table.insert (name, value.Name)
 			table.insert (obj, value)
 		end
-		return name, obj
+		return obj
 	end
 	
 	-- if others then return everyone except you
@@ -1285,100 +1277,70 @@ function findplayer (playername: string): table
 			if value == LOCALPLAYER then
 				continue
 			end
-			table.insert (name, value.Name)
 			table.insert (obj, value)
 		end
-		return name, obj
+		return obj
 	end
 
 	if playername == 'me' then
-		table.insert (name, LOCALPLAYER.Name)
 		table.insert (obj, LOCALPLAYER)
-		return name, obj
+		return obj
 	end
 
 	-- find the player and return it
 	for index, value in ipairs (PLAYERS:GetPlayers()) do
 		if string.lower (value.Name):match ("^" .. string.lower (playername)) then
-			table.insert (name, value.Name)
-			table.insert (obj, value)
+			if not alreadyontable (obj, value) then
+                table.insert (obj, value)
+            end
 		end
 	end
 
 	for index, value in ipairs (PLAYERS:GetPlayers()) do
 		if string.lower (value.DisplayName):match ("^" .. string.lower(playername)) or
 		string.lower(value.Character.Humanoid.DisplayName):match("^" .. string.lower(playername)) then
-			table.insert (name, value.Name)
-			table.insert (obj,value)
+			if not alreadyontable(obj, value) then
+                table.insert (obj,value)
+            end
 		end
 	end
 	
-	return name, obj
+	return obj
 end
 
-local function runcmd (cmd: string): boolean
-	local list = {}
 
-	for word in string.gmatch (cmd, "%g+") do
-		table.insert (list, tostring(word))
-	end
+local function runcmd (text: string)
+    local text: string = string.split(string.lower(text), ' ')
 
-	local command = string.lower(list[1])
+    local cmd = text[1]
+    local arguments = {env = nil}
 
-	local arguments = {}
-
-	-- if the command is not on the table commands
-	-- make a loop to see if it is on the alias table
-	if not commands[command] then
-        for key, value in pairs (commands) do
-            if typeof (value.alias) == 'table' then
-                    for index, val in pairs (value.alias) do
-                    if val == command then command = index end
+    if not commands[cmd] then
+        for command, property in pairs (commands) do
+            for key, value in pairs (property.alias) do
+                if value == cmd then
+                    cmd = command
                 end
             end
-
-            if typeof(value.alias) == 'string' then
-                if value.alias == command then command = key end
-            end
-        end
-		table.foreachi (commands, function(index, value)
-			table.foreach (value.alias, function(key, val)
-				if val == command then
-					command = index
-				end
-			end)
-
-			if value.alias == command then
-				command = index
-			end
-		end)
-	end
-
-    if not commands[command] then return end
-
-    for key, value in pairs (commands[command]) do
-        if key == 'needs_player' and value == true then
-            arguments.playernames,arguments.playerobjects = findplayer(list[2])
-		    arguments.text = table.concat(list, ' ', 3)
-            else
-            arguments.text = table.concat (list, ' ', 2)
         end
     end
 
-	local success, result = pcall ( coroutine.wrap (function ()
-		-- run the command with 'arguments' being a table
-		-- if the command doesnt need a player then arguments[1]
-		-- is a string or else arguments[3]
+    if commands[cmd] then
+        arguments.env = commands[cmd]
+        if commands[cmd].req_plr == true then
+            arguments.players = findplayer (text[2]) -- table
+            arguments.text = table.concat (text, ' ', 3)
+        else
+            arguments.text = table.concat (text, ' ', 2)
+        end
 
-		-- if the command needs a player then
-		-- argument[1] is a table with the player(s) name(s)
-		-- argument[2] is a table with the player(s) instance(s)
-		-- argument[3] is the rest of the argument
-		commands[command].func (arguments)
-		table.clear (list)
-		table.clear (arguments)
-	end) )
-	return success, result
+        commands[cmd].func (arguments)
+
+
+        return
+    end
+
+    error ('command not found!')
 end
 
 local ScreenGui: ScreenGui = Instance.new ("ScreenGui")
