@@ -1200,24 +1200,16 @@ addcmd ('notifyage', {
 })
 
 -- part: Instance, step: number
-function predictstep (...): CFrame
-	local args = {...}
-
-	local part: any = args[1]
-
-	local step: number = args[2] or 0
-
-	local currentposition: Vector3 = part.Position
-	local currentvelocity: Vector3 = part.AssemblyLinearVelocity or Vector3.zero
-
-	local currentorientation: Vector3 = part.Orientation
-
-	-- i currently dont know how to calculate acceleration on ROBLOX; with acceleration = (initialVelocity - finalVelocity) / time, it should work but doesn't
-
-	-- formula: position + (acceleration/2) * step * gravity * step
-	local predictedstep = CFrame.new ( (currentposition + (currentvelocity/2) * step * workspace.Gravity * step ) )
+function predictstep (object:Part): CFrame
+	local beforePos = object.Position
+	local step = game:GetService("RunService").Stepped:Wait()
+	local afterPos = object.Position
+	local accel = afterPos - beforePos
 	
-	return predictedstep
+	local distance = CHARACTER.HumanoidRootPart.CFrame - object.CFrame
+	local _time = distance / object.AssemblyLinearVelocity
+	local position = CFrame.new(object.Position + object.AssemblyLinearVelocity * _time + 0.5 * accel * _time^2) * step
+	return position
 end
 
 -- message: string, color: Color3, size: number
@@ -1316,19 +1308,7 @@ function findplayer (playername: string): table
 	return name, obj
 end
 
-local function runcmd (cmd: string): boolean
-	local list = {}
-
-	for word in string.gmatch (cmd, "%g+") do
-		table.insert (list, tostring(word))
-	end
-
-	local command = string.lower(list[1])
-
-	local arguments = {}
-
-	-- if the command is not on the table commands
-	-- make a loop to see if it is on the alias table
+local function checkCommand (command)
 	if not commands[command] then
         for key, value in pairs (commands) do
             if typeof (value.alias) == 'table' then
@@ -1352,7 +1332,48 @@ local function runcmd (cmd: string): boolean
 				command = index
 			end
 		end)
+		return command
 	end
+end
+
+local function runcmd (cmd: string): boolean
+	local list = {}
+
+	for word in string.gmatch (cmd, "%g+") do
+		table.insert (list, tostring(word))
+	end
+
+	local command = string.lower(list[1])
+
+	local arguments = {}
+
+	-- if the command is not on the table commands
+	-- make a loop to see if it is on the alias table
+	command = checkCommand(commands[command])
+	--[[if not commands[command] then
+        for key, value in pairs (commands) do
+            if typeof (value.alias) == 'table' then
+                    for index, val in pairs (value.alias) do
+                    if val == command then command = index end
+                end
+            end
+
+            if typeof(value.alias) == 'string' then
+                if value.alias == command then command = key end
+            end
+        end
+		table.foreachi (commands, function(index, value)
+			table.foreach (value.alias, function(key, val)
+				if val == command then
+					command = index
+				end
+			end)
+
+			if value.alias == command then
+				command = index
+			end
+		end)
+	end]]
 
     if not commands[command] then return end
 
