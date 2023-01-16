@@ -1347,33 +1347,7 @@ local function runcmd (cmd: string): boolean
 
 	local arguments = {}
 
-	-- if the command is not on the table commands
-	-- make a loop to see if it is on the alias table
 	command = checkCommand(commands[command])
-	--[[if not commands[command] then
-        for key, value in pairs (commands) do
-            if typeof (value.alias) == 'table' then
-                    for index, val in pairs (value.alias) do
-                    if val == command then command = index end
-                end
-            end
-
-            if typeof(value.alias) == 'string' then
-                if value.alias == command then command = key end
-            end
-        end
-		table.foreachi (commands, function(index, value)
-			table.foreach (value.alias, function(key, val)
-				if val == command then
-					command = index
-				end
-			end)
-
-			if value.alias == command then
-				command = index
-			end
-		end)
-	end]]
 
     if not commands[command] then return end
 
@@ -1389,14 +1363,6 @@ local function runcmd (cmd: string): boolean
     end
 
 	local success, result = pcall ( coroutine.wrap (function ()
-		-- run the command with 'arguments' being a table
-		-- if the command doesnt need a player then arguments[1]
-		-- is a string or else arguments[3]
-
-		-- if the command needs a player then
-		-- argument[1] is a table with the player(s) name(s)
-		-- argument[2] is a table with the player(s) instance(s)
-		-- argument[3] is the rest of the argument
 		commands[command].func (arguments)
 		table.clear (list)
 		table.clear (arguments)
