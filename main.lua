@@ -602,49 +602,6 @@ addcmd ('unfreeze', {
 	end
 })
 
-addcmd ('predict', {
-	['needs_player'] = true,
-	['connections'] = {},
-	['parts'] = {},
-	['func'] = function(imtable: table)
-		local playernames = imtable.playernames
-		local playerobjs = imtable.playerobjects
-
-		for useless, player in ipairs (playerobjs) do
-			
-			local character = player.Character or player.CharacterAdded:Wait()
-			local part = Instance.new ('Part')
-			part.Anchored = true
-			part.CanCollide = false
-			part.Parent = workspace
-			part.Size = Vector3.one
-			table.insert (commands.predict.parts, part)
-			part.Material = Enum.Material.Neon
-			table.insert(commands.predict.connections, player.Character.Humanoid.Died:Connect(function() part:Destroy() end))
-			table.insert(commands.predict.connections, game:GetService'RunService'.Heartbeat:Connect(function(step)
-				if character.HumanoidRootPart then
-					local cframe = predictstep (character.HumanoidRootPart, step)
-					part.CFrame = cframe
-				end
-			end))
-
-		end
-	end
-})
-
-addcmd ('unpredict', {
-	['needs_player'] = false,
-	['func'] = function()
-		for index, value in ipairs (commands.predict.connections) do
-			value:Disconnect()
-		end
-
-		for index, value in ipairs (commands.predict.parts) do
-			value:Destroy()
-		end
-	end
-})
-
 addcmd ('gravity', {
 	['alias'] = 'grav',
 	['needs_player'] = false,
@@ -1199,19 +1156,6 @@ addcmd ('notifyage', {
 	end
 })
 
--- part: Instance, step: number
-function predictstep (object:Part): CFrame
-	local beforePos = object.Position
-	local step = game:GetService("RunService").Stepped:Wait()
-	local afterPos = object.Position
-	local accel = afterPos - beforePos
-	
-	local distance = CHARACTER.HumanoidRootPart.CFrame - object.CFrame
-	local _time = distance / object.AssemblyLinearVelocity
-	local position = CFrame.new(object.Position + object.AssemblyLinearVelocity * _time + 0.5 * accel * _time^2) * step
-	return position
-end
-
 -- message: string, color: Color3, size: number
 function Notify (...)
 	local args = {...}
@@ -1308,34 +1252,6 @@ function findplayer (playername: string): table
 	return name, obj
 end
 
-local function checkCommand (command)
-	if not commands[command] then
-        for key, value in pairs (commands) do
-            if typeof (value.alias) == 'table' then
-                    for index, val in pairs (value.alias) do
-                    if val == command then command = index end
-                end
-            end
-
-            if typeof(value.alias) == 'string' then
-                if value.alias == command then command = key end
-            end
-        end
-		table.foreachi (commands, function(index, value)
-			table.foreach (value.alias, function(key, val)
-				if val == command then
-					command = index
-				end
-			end)
-
-			if value.alias == command then
-				command = index
-			end
-		end)
-		return command
-	end
-end
-
 local function runcmd (cmd: string): boolean
 	local list = {}
 
@@ -1346,8 +1262,6 @@ local function runcmd (cmd: string): boolean
 	local command = string.lower(list[1])
 
 	local arguments = {}
-
-	command = checkCommand(commands[command])
 
     if not commands[command] then return end
 
