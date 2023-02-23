@@ -1,8 +1,56 @@
 if not game:IsLoaded() then game.Loaded:Wait() end
 
-local players = game:GetService("Players")
+local print = printuiconsole or print
+local error = erroruiconsole or error
+local warn = warnuiconsole or warn
+
+if getgenv()._CF then error("Creamfood is already loaded!") end
+local DEBUG = true
+
+if not DEBUG then
+	getgenv().CF = true
+end
+
+local Services = {
+	Workspace = game:GetService("Workspace"),
+	Lighting = game:GetService("Lighting"),
+	RunService = game:GetService("RunService"),
+	ReplicatedStorage = game:GetService("ReplicatedStorage"),
+	Players = game:GetService("Players"),
+	TeleportService = game:GetService("TeleportService"),
+	ContextActionService = game:GetService("ContextActionService"),
+	HttpService = game:GetService("HttpService"),
+}
+
+local players = Services.Players
 local player = players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
+local playergui = player.PlayerGui
+local playerbackpack = player.Backpack
+
+local Camera = workspace.CurrentCamera
+
+local sethiddenproperty = sethiddenproperty or set_hidden_property or set_hidden_prop
+local gethiddenproperty = gethiddenproperty or get_hidden_property or get_hidden_prop
+local setsimulationradius = setsimulationradius or set_simulation_radius
+local queue_on_teleport = queue_on_teleport or (fluxus and fluxus.queue_on_teleport) or (syn and syn.queue_on_teleport)
+local request = request or http_request or (fluxus and fluxus.request) or (http and http.request) or (syn and syn.request)
+local PlaceId, JobId = game.PlaceId, game.JobId
+local runcode = executescript or function(text) loadstring(text)() end
+local addchildinternal = addchildinternal or nil
+local setparentinternal = setparentinternal or nil
+local removechildinternal = removechildinternal or nil
+
+if not writefile then error("Your exploit doesn't have writefile, some commands may not run") end
+if not loadfile then error ("Your exploit doesn't have loadfile, some commands may not run") end
+if not addchildinternal then error("Your exploit doesn't have addchildinternal, every command will still work") end
+if not setparentinternal then error("Your exploit doesn't have setparentinternal, every command will still work") end
+if not removechildinternal then error("Your exploit doesn't have removechildinternal, every command will sill work") end
+if not request then error("Your exploit doesn't have request, some commands may not work") end
+if not queue_on_teleport then error("Your exploit doesn't have queue_on_teleport, some commands may not work") end
+if not setsimulationradius then error("Your exploit doesn't have setsimulationradius, some commands may not work") end
+
+local Inst = Instance.new
 
 local function GetCommandPlayer (Text)
 	local SpecialUseCases = {"all","me", "random", "others"}
@@ -36,10 +84,22 @@ local function GetCommandPlayer (Text)
 		end
 	end
 	
+	if string.find(hi, ",") then
+		local hi = hi:split(",")
+		for k,v in pairs (hi) do
+			selected_player[#selected_player+1] = GetCommandPlayer(v)[1]
+		end
+	end
+	
+	if DEBUG then
+		print(selected_player)
+	end
+	
 	return selected_player
 end
 
 local commands = {}
+local connections = {}
 
 local function add(command_name, func, aliases, description, paramTypes, separated)
 	commands[#commands+1] = {
@@ -106,19 +166,269 @@ local function playcmd (text)
 			params.Text = tonumber(params.Text)
 			elseif v == "string" then
 			params.Text = tostring(params.Text)
+			elseif v == "" or v == nil then
+			continue
 		end
 	end
-	print(cmd_name)
+	
+	if DEBUG then
+		print(cmd_name)
+	end
+	
 	local success, errMessage = pcall(cmd_name.func, params)
-	if not success then erroruiconsole(errMessage) end
+	if not success then error(errMessage) end
 end
 
-add ("print", function(yeet) printuiconsole(yeet.Text) end, {"p"}, "maeks console add text :3", {"string"}, false)
+
+local ScreenGui = Inst("ScreenGui")
+local Frame = Inst("Frame")
+local TextBox = Inst("TextBox")
+
+ScreenGui.Parent = gethui() or playergui
+Frame.Parent = ScreenGui
+TextBox.Parent = Frame
+
+Frame.BackgroundColor3 = Color3.fromRGB(
+math.random(0,255),
+math.random(0,255),
+math.random(0,255)
+)
+
+local function ud2offset(x,y)
+	return UDim2.fromOffset(x,y)
+end
+
+local screensize = ScreenGui.AbsoluteSize
+Frame.AnchorPoint = Vector2.new(0.5,0.5)
+Frame.Size = ud2offset(screensize.X/3, screensize.Y/15)
+Frame.Position = ud2offset(screensize.X/2, screensize.Y/1.2)
+TextBox.Size = ud2offset(screensize.X/3, screensize.Y/15.5)
+TextBox.Position = ud2offset(0,0)
+
+TextBox.FocusLost:Connect(function(enter)
+	if enter then
+		playcmd(TextBox.Text)
+		TextBox.Text = ""
+	end
+end)
+
+Services.ContextActionService:BindAction("ad", function()
+	TextBox:CaptureFocus()
+	spawn(function()
+		repeat TextBox.Text = "" until TextBox.Text == ""
+	end)
+end, false, Enum.KeyCode.Semicolon)
+
+add ("print", function(yeet) print(yeet.Text) end, {"p"}, "maeks console add text :3", {"string"}, false)
 
 add ("speed", function(yeet)
 	if player and player.Character then
-		player.Character.Humanoid.WalkSpeed = yeet.Text
+		character.Humanoid.WalkSpeed = yeet.Text
 	end
 end, {"ws","walkspeed"}, "go fast", {"number"},false)
 
-playcmd("ws 25")
+add("jpower", function(yeet)
+	if player and player.Character then
+		character.Humanoid.JumpPower = yeet.Text
+	end
+end, {"jp","jumppower"}, "jump high", {"number"}, false)
+
+add("maxfps", function(yeet)
+	local setfpscap = setmaxfps or set_fps_cap or setfpscap
+	setfpscap(yeet.Text)
+end, {"setmaxfps"}, "changes your max fps", {"number"}, false)
+
+add("antiafk", function()	
+	for k,v in pairs (connections) do
+		if k == "antiafk" then v:Disable() v:Disconnect() end
+	end
+	
+	local antiafk = player.Idled:Connect(function()
+		for _, connection in pairs (getconnections(player.Idled)) do
+			connection:Disable()
+			connection:Disconnect()
+		end
+	end)
+	
+	connections["antiafk"] = antiafk
+end, {"aa", "afk"}, "makes you not get kicked by being afk", {}, false)
+
+add("unantiafk", function()
+	for k,v in pairs (connections) do
+		if k == "antiafk" then v:Disable() v:Disconnect() end
+	end
+end, {"unaa","unafk","noaa","noafk"}, "makes you get kicked by being afk", {}, false)
+
+add("spin", function(yeet)
+	local bav = Instance.new("BodyAngularVelocity")
+	bav.Parent = player.Character.HumanoidRootPart
+	bav.AngularVelocity = Vector3.new (0, yeet.Text, 0)
+	bav.MaxTorque = Vector3.new (0, math.huge, 0)
+	connections[#connections+1] = bav
+end, {}, "makes you spin", {"number"}, false)
+
+add("unspin", function(yeet)
+	for k,v in pairs (connections) do
+		if v.Name == "BodyAngularVelocity" then v:Destroy() end
+	end
+end, {}, "makes you stop spinning :(", {}, false)
+
+add("teleport", function(yeet)
+	local _players = yeet[1]
+	for k,v in pairs (_players) do
+		character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame
+	end
+end, {"tp"}, "tp to someone", {"player"}, false)
+
+add("rejoin", function()
+	player:Kick()
+	task.wait(0.3)
+	if #Services.Players:GetPlayers() <= 1 then
+		Services.TeleportService:Teleport(PlaceId, player)
+		else
+		Services.TeleportService:TeleportToPlaceInstance(PlaceId, JobId, player)
+	end
+end, {"rj"}, "rejoin the game or to another server", {}, false)
+
+add("loadfile", function(yeet)
+	if loadfile then
+		loadfile(yeet.Text)
+	end
+end, {"lf"}, "you load a file?", {"string"}, false)
+
+add("runcode", function(yeet)
+	runcode(yeet.Text)
+end, {"rc"}, "you run code", {"string"}, false)
+
+add("hitbox", function()
+	for k, object in pairs (workspace:GetDescendants()) do
+		if object:IsA("BasePart") or object:IsA("MeshPart") then
+			local box = Instance.new("SelectionBox")
+			if setparentinternal then setparentinternal(box, object) box.Parent = object else box.Parent = object end
+			connections[#connections+1] = box
+			box.LineThickness = 0.015
+			box.Adornee = object
+			if object.Transparency > 0 then
+				box.Color3 = Color3.fromRGB(255,201,252)
+				else
+				box.Color3 = Color3.fromRGB(201,248,255)
+			end
+		end
+	end
+end, {}, "show every part hitbox", {}, false)
+
+add("unhitbox", function()
+	for index,v in ipairs (connections) do
+		if v.Name == "SelectionBox" then v:Destroy() connections[index] = nil end
+	end
+end, {},"stops showing every part hitbox", {}, false)
+
+add("noclip",function()
+	for _, part in pairs (character:GetDescendants()) do
+		if part:IsA("BasePart") and part.CanCollide == true then
+			connections[#connections+1] = {
+			name = "noclip",
+			part = part,
+			Stepped = Services.RunService.Stepped:Connect(function()
+				part.CanCollide = false
+			end)
+			}
+		end
+	end
+end, {"nc"}, "noclip into the backrooms, jk you dont collide", {}, false)
+
+add("clip", function()
+	for index, value in ipairs (connections) do
+		if value.name and value.name == "noclip" then
+			value.part.CanCollide = true
+			value.Stepped:Disconnect()
+			connections[index] = nil
+		end
+	end
+end, {"unnc","nonc"}, "you collide", {}, false)
+
+add("jump", function()
+	character.Humanoid:ChangeState (Enum.HumannoidStateType.Jumping)
+end, {}, "jump", {}, false)
+
+add("sit", function()
+	character.Humanoid.Sit = true
+end, {}, "you sit", {}, false)
+
+add("rainbow", function()
+	local someveryfancymath = player.AccountAge + player.UserId + workspace.GlobalWind.Magnitude + workspace.Gravity
+	local rand = Random.new(someveryfancymath)
+	for k,v in ipairs (workspace:GetDescendants()) do
+		if v:IsA("BasePart") or v:IsA("MeshPart") then
+			v.Color = Color3.fromRGB(rand:NextNumber(0,255), rand:NextNumber(0,255), rand:NextNumber(0,255))
+		end
+	end
+end, {"rainbow_world"}, "so colorful!!!", {}, false)
+
+add("goto", function(yeet)
+	for k,v in pairs (yeet[1]) do
+		if v.Character then
+			character.Humanoid:MoveTo(v.Character.HumanoidRootPart.Position)
+		end
+	end
+end, {"to"}, "you walk to someone", {"player"}, false)
+
+add("fireclickdetectors", function()
+	if not fireclickdetector then return end
+	for _, object in ipairs (workspace:GetDescendants()) do
+		if object:IsA("ClickDetector") then
+			fireclickdetector(object, 2)
+		end
+	end
+end, {"firecds"}, "fire all the clickdetectors", {}, false)
+
+add("view", function(yeet)
+	for k,v in pairs (yeet[1]) do
+		
+		if connections["view"] then
+			connections["view"]:Disconnect()
+		end
+		
+		if v.Character then
+			Camera.CameraSubject = v.Character.Humanoid
+			
+			connections["view"] = v.Character.Humanoid.Died:Connect(function()
+				Camera.CameraSubject = character.Humanoid
+				if connections["view"] then connections["view"] = nil end
+			end)
+		end
+	end
+end, {}, "view someone else", {"player"}, false)
+
+add("cmds", function()
+	for k,v in pairs (commands) do
+		print(v.name)
+	end
+end,{}, "prints commands", {}, false)
+
+add("infjump", function()
+	Services.ContextActionService:BindAction("ijump",
+	function(actionName, inputState, inputObject)
+		if inputState == Enum.UserInputState.Begin then
+			character.Humanoid:ChangeState (Enum.HumanoidStateType.Jumping)
+		end
+	end, false, Enum.KeyCode.Space)
+end, {}, "go to space weeeeee", {}, false)
+
+add("uninfjump", function()
+	Services.ContextActionService:UnbindAction("ijump")
+end, {}, "not going to space :(", {}, false)
+
+add("nosit", function()
+	if connections["nosit"] then connections["nosit"]:Disconnect() end
+	connections["nosit"] = character.Humanoid.Seated:Connect(function(seated)
+		if seated then
+			character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+		end
+	end)
+end, {}, "cant seat anymore ;-;", {}, false)
+
+add("unnosit", function()
+	connections["nosit"]:Disconnect()
+	connections["nosit"] = nil
+end, {}, "can seat :D", {}, false)
