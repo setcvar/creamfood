@@ -5,6 +5,7 @@ local error = erroruiconsole or error
 local warn = warnuiconsole or warn
 
 if getgenv()._CF then error("Creamfood is already loaded!") end
+
 local DEBUG = true
 
 if not DEBUG then
@@ -20,6 +21,7 @@ local Services = {
 	TeleportService = game:GetService("TeleportService"),
 	ContextActionService = game:GetService("ContextActionService"),
 	HttpService = game:GetService("HttpService"),
+	TweenService = game:GetService("TweenService"),
 }
 
 local players = Services.Players
@@ -37,20 +39,20 @@ local queue_on_teleport = queue_on_teleport or (fluxus and fluxus.queue_on_telep
 local request = request or http_request or (fluxus and fluxus.request) or (http and http.request) or (syn and syn.request)
 local PlaceId, JobId = game.PlaceId, game.JobId
 local runcode = executescript or function(text) loadstring(text)() end
-local addchildinternal = addchildinternal or nil
-local setparentinternal = setparentinternal or nil
-local removechildinternal = removechildinternal or nil
 
-if not writefile then error("Your exploit doesn't have writefile, some commands may not run") end
-if not loadfile then error ("Your exploit doesn't have loadfile, some commands may not run") end
-if not addchildinternal then error("Your exploit doesn't have addchildinternal, every command will still work") end
-if not setparentinternal then error("Your exploit doesn't have setparentinternal, every command will still work") end
-if not removechildinternal then error("Your exploit doesn't have removechildinternal, every command will sill work") end
+if not writefile then error("Your exploit doesn't have writefile, some commands may not work") end
+if not loadfile then error ("Your exploit doesn't have loadfile, some commands may not work") end
 if not request then error("Your exploit doesn't have request, some commands may not work") end
 if not queue_on_teleport then error("Your exploit doesn't have queue_on_teleport, some commands may not work") end
 if not setsimulationradius then error("Your exploit doesn't have setsimulationradius, some commands may not work") end
 
 local Inst = Instance.new
+
+local function SendNotification(text)
+	local ScreenGui = Inst("ScreenGui")
+	ScreenGui.Parent = gethui() or playergui
+	local number = math.random(1,#playergui:GetChildren())
+end
 
 local function GetCommandPlayer (Text)
 	local SpecialUseCases = {"all","me", "random", "others"}
@@ -100,83 +102,70 @@ end
 
 local commands = {}
 local connections = {}
+local waypoints = {}
 
-local function add(command_name, func, aliases, description, paramTypes, separated)
+local function add(command_name, func, aliases, description, paramTypes)
 	commands[#commands+1] = {
 	name = command_name,
 	func = func,
 	aliases = aliases,
 	desc = description,
 	paramTypes = paramTypes,
-	separated = separated,
 	}
+end
+
+local function FindCommand(cmd_name)
+	if commands[cmd_name] then return commands[cmd_name] end
+	
+	for _, c in pairs (commands) do
+		if c.name == cmd_name then return c end
+		
+		for k, alias in pairs (c.aliases) do
+			if alias == cmd_name then
+				return c
+			end
+		end
+	end
 end
 
 local function playcmd (text)
 	local text = text:split(" ")
+	local cmd_name = text[1] -- garantido, sempre será o primeiro
+	table.remove(text,1)
+	local cmd = FindCommand(cmd_name)
+	local parameters = {}
 	
-	local cmd_name = text[1]
-	local plr = text[2]
-	local params = {}
+	if not cmd then return end
 	
-	if commands[cmd_name] == nil then
-		
-		for i, cmd in pairs (commands) do
+	if #cmd.paramTypes == 1 then -- everything needs to be the same
+		if cmd.paramTypes[1] == "string" then
+			parameters[1] = tostring(table.concat(text, " ",1))
 			
-			for k, value in pairs (cmd) do
-				if k == "aliases" or k == "name" then
-					
-					if typeof(value) == "string" and value == cmd_name then
-						cmd_name = cmd
-						elseif typeof(value) == "table" then
-						for j,k in pairs (value) do
-							if k == cmd_name then
-								cmd_name = cmd
-							end
-						end
-					end
-					
-				end
+			elseif cmd.paramTypes[1] == "player" then
+			parameters[1] = GetCommandPlayer(text[1])
+			
+			elseif cmd.paramTypes[1] == "number" then
+			parameters[1] = tonumber(table.concat(text, " ", 1))
+			
+			elseif cmd.paramTypes[1] == "bool" then
+			
+		end
+		
+		--parameters.Text = table.concat(parameters, " ", 1)
+		
+		else
+		for i, v in ipairs(cmd.paramTypes) do
+			if v == "player" then
+				parameters[i] = GetCommandPlayer(text[i])
+				elseif v == "string" then
+				parameters[i] = tostring(text[i])
+				elseif v == "number" then
+				parameters[i] = tonumber(text[i])
 			end
-			
-		end
-		
-	end
-	
-	local separated, paramTypes = cmd_name.Separated, cmd_name.paramTypes
-	local text2
-	if cmd_name.paramTypes[1] == "player" then
-		text2 = table.concat(text, " ",3)
-		else
-		text2 = table.concat(text, " ", 2)
-	end
-	
-	local text2 = text2:split(" ")
-	
-	if separated then
-		params.Text = text2
-		else
-		params.Text = table.concat(text2," ")
-	end
-	
-	for k,v in ipairs (paramTypes) do
-		if v == "player" then
-			params[k] = GetCommandPlayer(text[2])
-			elseif v == "number" then
-			params.Text = tonumber(params.Text)
-			elseif v == "string" then
-			params.Text = tostring(params.Text)
-			elseif v == "" or v == nil then
-			continue
 		end
 	end
 	
-	if DEBUG then
-		print(cmd_name)
-	end
-	
-	local success, errMessage = pcall(cmd_name.func, params)
-	if not success then error(errMessage) end
+	pcall(cmd.func, parameters)
 end
 
 
@@ -185,6 +174,7 @@ local Frame = Inst("Frame")
 local TextBox = Inst("TextBox")
 
 ScreenGui.Parent = gethui() or playergui
+ScreenGui.ResetOnSpawn = false
 Frame.Parent = ScreenGui
 TextBox.Parent = Frame
 
@@ -194,22 +184,80 @@ math.random(0,255),
 math.random(0,255)
 )
 
+TextBox.BackgroundColor3 = Color3.fromRGB(20,20,20)
+TextBox.TextColor3 = Color3.fromRGB(255,255,255)
+TextBox.BorderSizePixel = 0
+
 local function ud2offset(x,y)
 	return UDim2.fromOffset(x,y)
 end
 
+local function ud2scale(x,y)
+	return UDim2.fromScale(x,y)
+end
+
+local function Notify(text, duration)
+	local duration = duration or 3
+	
+	local ScreenGui = Inst("ScreenGui")
+	ScreenGui.Parent = gethui() or playergui
+	
+	local hi = playergui:GetChildren()
+	
+	local number = math.random(1,#hi)
+	
+	ScreenGui.Name = hi[number].Name
+	
+	local Frame = Inst("Frame")
+	Frame.Parent = ScreenGui
+	frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	frame.BorderSizePixel = 0
+	frame.Position = ud2scale(0.748,0.824)
+	frame.Size = ud2scale(0.237,0.128)
+	frame.Transparency = 1
+	
+	local TextLabel = Inst("TextLabel")
+	TextLabel.AutomaticSize = Enum.AutomaticSize.X
+	TextLabel.BackgroundTransparency = 1
+	TextLabel.Position = ud2scale(0,0.072)
+	TextLabel.Size = ud2scale(1,0.845)
+	TextLabel.RichText = true
+	TextLabel.TextColor3 = Color3.fromRGB(255,255,255)
+	TextLabel.TextScaled = true
+	TextLabel.Text = text
+	TextLabel.TextTransparency = 1
+	
+	local info = TweenInfo.new(1)
+	local tween = Services.TweenService:Create(Frame, info, {Transparency = 0})
+	tween:Play()
+	local tween = Services.TweenService:Create(TextLabel, info, {TextTransparency = 0})
+	tween:Play()
+end
+
 local screensize = ScreenGui.AbsoluteSize
 Frame.AnchorPoint = Vector2.new(0.5,0.5)
-Frame.Size = ud2offset(screensize.X/3, screensize.Y/15)
-Frame.Position = ud2offset(screensize.X/2, screensize.Y/1.2)
-TextBox.Size = ud2offset(screensize.X/3, screensize.Y/15.5)
+Frame.Size = ud2scale(0.3,0.05)
+Frame.Position = ud2scale(0.5,0.85)
+TextBox.Size = ud2scale(1,0.95)
 TextBox.Position = ud2offset(0,0)
+Frame.BorderSizePixel = 0
+Frame.Transparency = 1
+TextBox.Transparency = 1
 
 TextBox.FocusLost:Connect(function(enter)
 	if enter then
-		playcmd(TextBox.Text)
+		if DEBUG then
+			playcmd(TextBox.Text)
+			else
+			pcall(playcmd, TextBox.Text)
+		end
 		TextBox.Text = ""
 	end
+	local info = TweenInfo.new(1)
+	local tween = Services.TweenService:Create(Frame, info, {Transparency = 1})
+	tween:Play()
+	local tween = Services.TweenService:Create(TextBox, info, {Transparency = 1})
+	tween:Play()
 end)
 
 Services.ContextActionService:BindAction("ad", function()
@@ -217,25 +265,32 @@ Services.ContextActionService:BindAction("ad", function()
 	spawn(function()
 		repeat TextBox.Text = "" until TextBox.Text == ""
 	end)
+	local info = TweenInfo.new(1)
+	local tween = Services.TweenService:Create(Frame, info, {Transparency = 0})
+	tween:Play()
+	local tween2 = Services.TweenService:Create(TextBox, info, {Transparency = 0})
+	tween2:Play()
 end, false, Enum.KeyCode.Semicolon)
 
-add ("print", function(yeet) print(yeet.Text) end, {"p"}, "maeks console add text :3", {"string"}, false)
+add ("print", function(yeet)
+	print(yeet[1])
+end, {"p"}, "maeks console add text :3", {"string"}, false)
 
 add ("speed", function(yeet)
 	if player and player.Character then
-		character.Humanoid.WalkSpeed = yeet.Text
+		character.Humanoid.WalkSpeed = yeet[1]
 	end
 end, {"ws","walkspeed"}, "go fast", {"number"},false)
 
 add("jpower", function(yeet)
 	if player and player.Character then
-		character.Humanoid.JumpPower = yeet.Text
+		character.Humanoid.JumpPower = yeet[1]
 	end
 end, {"jp","jumppower"}, "jump high", {"number"}, false)
 
 add("maxfps", function(yeet)
 	local setfpscap = setmaxfps or set_fps_cap or setfpscap
-	setfpscap(yeet.Text)
+	setfpscap(yeet[1])
 end, {"setmaxfps"}, "changes your max fps", {"number"}, false)
 
 add("antiafk", function()	
@@ -292,19 +347,19 @@ end, {"rj"}, "rejoin the game or to another server", {}, false)
 
 add("loadfile", function(yeet)
 	if loadfile then
-		loadfile(yeet.Text)
+		loadfile(yeet[1])
 	end
 end, {"lf"}, "you load a file?", {"string"}, false)
 
 add("runcode", function(yeet)
-	runcode(yeet.Text)
+	runcode(yeet[1])
 end, {"rc"}, "you run code", {"string"}, false)
 
 add("hitbox", function()
 	for k, object in pairs (workspace:GetDescendants()) do
 		if object:IsA("BasePart") or object:IsA("MeshPart") then
 			local box = Instance.new("SelectionBox")
-			if setparentinternal then setparentinternal(box, object) box.Parent = object else box.Parent = object end
+			box.Parent = object
 			connections[#connections+1] = box
 			box.LineThickness = 0.015
 			box.Adornee = object
@@ -432,3 +487,170 @@ add("unnosit", function()
 	connections["nosit"]:Disconnect()
 	connections["nosit"] = nil
 end, {}, "can seat :D", {}, false)
+
+add("bhop", function()
+	if connections["bhop"] then connections["bhop"]:Disconnect() end
+	connections["bhop"] = Services.RunService.Heartbeat:Connect(function()
+		if character.Humanoid and character.Humanoid.FloorMaterial ~= Enum.Material.Air then
+			character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+		end
+	end)
+end, {"bunnyhop"}, "jump jump jump jump", {}, false)
+
+add("unbhop", function()
+	if connections["bhop"] then
+		connections["bhop"]:Disconnect()
+		connections["bhop"] = nil
+	end
+end,{"stopbhop","stopbunnyhop"}, "no jump jump jump :c", {}, false)
+
+add("hipheight", function(yeet)
+	if character and character.Humanoid then
+		character.Humanoid.HipHeight(yeet.Text)
+	end
+end,{"hh"}, "you walk on air but not on air", {"number"}, false)
+
+add("streamer", function()
+	if connections["streamer"] then
+		connections["streamer"]["players"] = {}
+		connections["streamer"]["connection"] = {}
+		connections["streamer"]["connection2"] = {}
+	end
+	
+	connections["streamer"] = {}
+	connections["streamer"]["players"] = {}
+	
+	local function ChangeName(p)
+		if p.Character and p.Character.Humanoid then
+			local new_name = Services.HttpService:GenerateGUID(false)
+			p.Character.Humanoid.DisplayName = new_name
+			p.DisplayName = new_name
+		end
+	end
+	
+	for _, v in pairs (Services.Players:GetPlayers()) do
+		if connections["streamer"]["players"][v.Name] then continue end
+		connections["streamer"]["players"][v.Name] = ""
+		
+		ChangeName(v)
+		
+		connections["streamer"]["connection"] = v.Character.Humanoid.Died:Connect(function()
+			connections["streamer"]["players"][v.Name] = nil
+			v.CharacterAdded:Wait()
+			if v.Character then
+				ChangeName(v)
+				connections["streamer"]["players"][v.Name] = ""
+			end
+		end)
+	end
+	
+	connections["streamer"]["connection2"] = Services.Players.PlayerAdded:Connect(function(player)
+		player.CharacterAdded:Wait()
+		if player.Character then
+			ChangeName(player)
+			connections["streamer"]["players"][v.Name] = ""
+			
+			player.Character.Humanoid.Died:Connect(function()
+				connections["streamer"]["players"][player.Name] = nil
+				player.CharacterAdded:Wait()
+				if player.Character then
+					ChangeName(player)
+					connections["streamer"]["players"][player.Name] = ""
+				end
+			end)
+		end
+	end)
+	
+end,{"streamermode"}, "makes players names not their names", {}, false)
+
+add("unstreamer", function()
+	if connections["streamer"] then
+		connections["streamer"]["players"] = {}
+		
+		connections["streamer"]["connection"]:Disconnect()
+		connections["streamer"]["connection2"]:Disconnect()
+	end
+end,{"nostreamermode","stopstreamermode"}, "makes player names their names", {}, false)
+
+add("autorotate",function(yeet)
+	character.Humanoid.AutoRotate = yeet.Text
+end,{},"makes you stop rotating", {"bool"},false)
+
+add("freeze",function(yeet)
+	connections["freeze"] = {}
+	for _,v in pairs (yeet[1]) do
+		connections["freeze"][v.Name] = {}
+		for j,k in pairs (v.Character:GetChildren()) do
+			if k:IsA("BasePart") and k.Anchored == false then
+				k.Anchored = true
+				connections["freeze"][v.Name][#connections["freeze"][v.Name]+1] = k
+			end
+		end
+	end
+end, {}, "freezes the player(s)", {"player"}, false)
+
+add("unfreeze", function(yeet)
+	for _,v in pairs (yeet[1]) do
+		if connections["freeze"][v.Name] then
+			for j,k in pairs (connections["freeze"][v.Name]) do
+				k.Anchored = false
+				k = nil
+			end
+			
+			connections["freeze"][v.Name] = nil
+		end
+	end
+end, {"thaw"}, "makes the player(s) not frozen", {"player"}, false)
+
+add("gravity", function(yeet)
+	Services.Workspace.Gravity = yeet[1]
+end, {"grav"}, "changes the gravity", {"number"}, false)
+
+add("fov", function(yeet)
+	Camera.FieldOfView = yeet[1]
+end,{},"changes the field of view", {"number"}, false)
+
+add("spam", function(yeet)
+	connections["spam"] = true
+	while connections["spam"] do
+		wait(connections["spamspeed"] or 3)
+		if connections["spam"] then
+			Services.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(yeet[1], "All")
+		end
+	end
+end, {}, "makes you spam text on chat", {"string"}, false)
+
+add("unspam", function()
+	connections["spam"] = false
+end,{"stopspam"}, "makes you stop spamming", {}, false)
+
+add("spamspeed",function(yeet)
+	connections["spamspeed"] = yeet[1]
+	
+	if DEBUG then
+		print(connections["spamspeed"])
+	end
+	
+end, {}, "makes you spam faster or slower", {"number"}, false)
+
+add("mkwaypoint", function(yeet)
+	if not character then return end
+	local waypoint_name = yeet[1]
+	local currentCFrame = character.HumanoidRootPart.CFrame
+	waypoints[waypoint_name] = currentCFrame
+	currentCFrame = nil
+end, {"mkwp", "makewaypoint"}, "waypoints yes", {"string"}, false)
+
+add("gotowp", function(yeet)
+	local waypoint_name = yeet[1]
+	if waypoints[waypoint_name] then
+		character.HumanoidRootPart.CFrame = waypoints[waypoint_name]
+	end
+end,{"towp","gotowaypoint","towaypoint"}, "walk to waypoint", {"string"}, false)
+
+add("rmwp", function(yeet)
+	local waypoint_name = yeet[1]
+	if waypoints[waypoint_name] then
+		waypoints[waypoint_name] = nil
+	end
+end,{"removewp","removewaypoint"}, "remove the waypoint", {"string"}, false)
