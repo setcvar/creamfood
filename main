@@ -231,10 +231,11 @@ local function Notify(text, duration)
 	TextLabel.Size = ud2scale(1,0.845)
 	TextLabel.RichText = true
 	TextLabel.TextColor3 = Color3.fromRGB(255,255,255)
-	TextLabel.TextScaled = true
+	TextLabel.TextScaled = false
 	TextLabel.Text = text
 	TextLabel.Parent = Frame
 	TextLabel.TextTransparency = 1
+	TextLabel.TextSize = 14
 	
 	local info = TweenInfo.new(1)
 	local tween = Services.TweenService:Create(Frame, info, {Transparency = 0})
@@ -744,6 +745,32 @@ end,{},"changes your max slope angle", {"number"})
 
 add("joinlogs", function()
 	connections["joinlogs"] = Services.Players.PlayerAdded:Connect(function(plr)
-		Notify ("<font color='rgb(0,255,94)'>"..plr.Name.." joined</font>", 4)
+		Notify ("<font color='rgb(0,255,94)'>"..plr.Name.."</font> joined", 4)
 	end)
 end,{},"notifies when a player joins", {})
+
+add("friendlogs", function()
+	connections["friendlogs"] = Services.Players.PlayerAdded:Connect(function(plr)
+		if plr:IsFriendsWith(player.UserId) then
+			Notify ("<font color='rgb(0,228,255)'>"..plr.Name.."</font> joined", 4)
+		end
+	end)
+end,{},"notifies when a player joins", {})
+
+add("unjoinlogs",function()
+	if connections["joinlogs"] then
+		connections["joinlogs"]:Disconnect()
+	end
+end,{"stopjoinlogs"},"stops notifying when a player join", {})
+
+add("unfriendlogs",function()
+	if connections["friendlogs"] then
+		connections["friendlogs"]:Disconnect()
+	end
+end,{"stopfriendlogs"},"stops notifying when a friend join", {})
+
+add ("walkdir", function()
+	connections["walkdir"] = Services.RunService.Stepped:Connect(function()
+		character.HumanoidRootPart.CFrame += character.Humanoid.MoveDirection
+	end)
+end,{},"idk", {})
