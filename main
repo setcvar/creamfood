@@ -22,6 +22,8 @@ local Services = {
 	ContextActionService = game:GetService("ContextActionService"),
 	HttpService = game:GetService("HttpService"),
 	TweenService = game:GetService("TweenService"),
+	Debris = game:GetService("Debris"),
+	NetworkSettings = game:GetService("NetworkSettings"),
 }
 
 local players = Services.Players
@@ -34,18 +36,18 @@ local Camera = workspace.CurrentCamera
 
 local sethiddenproperty = sethiddenproperty or set_hidden_property or set_hidden_prop
 local gethiddenproperty = gethiddenproperty or get_hidden_property or get_hidden_prop
-local setsimulationradius = setsimulationradius or set_simulation_radius
 local queue_on_teleport = queue_on_teleport or (fluxus and fluxus.queue_on_teleport) or (syn and syn.queue_on_teleport)
 local request = request or http_request or (fluxus and fluxus.request) or (http and http.request) or (syn and syn.request)
 local PlaceId, JobId = game.PlaceId, game.JobId
 local runcode = executescript or function(text) loadstring(text)() end
+local setclipboard = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
 
 if not writefile then error("Your exploit doesn't have writefile, some commands may not work") end
 if not loadfile then error ("Your exploit doesn't have loadfile, some commands may not work") end
 if not request then error("Your exploit doesn't have request, some commands may not work") end
 if not queue_on_teleport then error("Your exploit doesn't have queue_on_teleport, some commands may not work") end
 if not setsimulationradius then error("Your exploit doesn't have setsimulationradius, some commands may not work") end
-
+if not setclipboard then error("Your exploit doesn't have setclipboard, some commands may not work") end
 local Inst = Instance.new
 
 local function SendNotification(text)
@@ -135,6 +137,8 @@ local function playcmd (text)
 	local cmd = FindCommand(cmd_name)
 	local parameters = {}
 	
+	parameters.Text = ""
+	
 	if not cmd then return end
 	
 	if #cmd.paramTypes == 1 then -- everything needs to be the same
@@ -151,8 +155,6 @@ local function playcmd (text)
 			
 		end
 		
-		--parameters.Text = table.concat(parameters, " ", 1)
-		
 		else
 		for i, v in ipairs(cmd.paramTypes) do
 			if v == "player" then
@@ -163,9 +165,15 @@ local function playcmd (text)
 				parameters[i] = tonumber(text[i])
 			end
 		end
+		
+		parameters.Text = table.concat(text, " ", 2)
 	end
 	
-	pcall(cmd.func, parameters)
+	if DEBUG then
+		cmd.func(parameters)
+		else
+		pcall(cmd.func, parameters)
+	end
 end
 
 
@@ -210,11 +218,11 @@ local function Notify(text, duration)
 	
 	local Frame = Inst("Frame")
 	Frame.Parent = ScreenGui
-	frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
-	frame.BorderSizePixel = 0
-	frame.Position = ud2scale(0.748,0.824)
-	frame.Size = ud2scale(0.237,0.128)
-	frame.Transparency = 1
+	Frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	Frame.BorderSizePixel = 0
+	Frame.Position = ud2scale(0.748,0.824)
+	Frame.Size = ud2scale(0.237,0.128)
+	Frame.Transparency = 1
 	
 	local TextLabel = Inst("TextLabel")
 	TextLabel.AutomaticSize = Enum.AutomaticSize.X
@@ -225,6 +233,7 @@ local function Notify(text, duration)
 	TextLabel.TextColor3 = Color3.fromRGB(255,255,255)
 	TextLabel.TextScaled = true
 	TextLabel.Text = text
+	TextLabel.Parent = Frame
 	TextLabel.TextTransparency = 1
 	
 	local info = TweenInfo.new(1)
@@ -232,6 +241,8 @@ local function Notify(text, duration)
 	tween:Play()
 	local tween = Services.TweenService:Create(TextLabel, info, {TextTransparency = 0})
 	tween:Play()
+	
+	game.Debris:AddItem(ScreenGui, duration)
 end
 
 local screensize = ScreenGui.AbsoluteSize
@@ -637,14 +648,22 @@ add("mkwaypoint", function(yeet)
 	if not character then return end
 	local waypoint_name = yeet[1]
 	local currentCFrame = character.HumanoidRootPart.CFrame
-	waypoints[waypoint_name] = currentCFrame
-	currentCFrame = nil
+	local serialized = {currentCFrame:GetComponents()}
+	waypoints[waypoint_name] = serialized
+	
+	local save = Services.HttpService:JSONEncode(waypoints)
+	
+	if DEBUG then
+		print(save)
+	end
+	
+	writefile("cf.lua", save)
 end, {"mkwp", "makewaypoint"}, "waypoints yes", {"string"}, false)
 
 add("gotowp", function(yeet)
 	local waypoint_name = yeet[1]
 	if waypoints[waypoint_name] then
-		character.HumanoidRootPart.CFrame = waypoints[waypoint_name]
+		character.HumanoidRootPart.CFrame = CFrame.new(table.unpack(waypoints[waypoint_name]))
 	end
 end,{"towp","gotowaypoint","towaypoint"}, "walk to waypoint", {"string"}, false)
 
@@ -652,5 +671,79 @@ add("rmwp", function(yeet)
 	local waypoint_name = yeet[1]
 	if waypoints[waypoint_name] then
 		waypoints[waypoint_name] = nil
+		local save = Services.HttpService:JSONEncode(waypoints)
+		if DEBUG then print(save) end
+		writefile("cf.lua", save)
 	end
 end,{"removewp","removewaypoint"}, "remove the waypoint", {"string"}, false)
+
+add("xray", function()
+	if connections["xray"] then connections["xray"] = nil end
+	connections["xray"] = {}
+	for k,v in pairs (Services.Workspace:GetDescendants()) do
+		if v:IsA("BasePart") or v:IsA("MeshPart") then
+			connections["xray"][#connections["xray"]+1] = v
+			v.Transparency = 0.5
+		end
+	end
+end, {}, "makes parts transparent", {})
+
+add("unxray", function()
+	if connections["xray"] then
+		for k,v in pairs (connections["xray"]) do
+			v.Transparency = 0
+		end
+	end
+end,{},"makes parts not transparent", {})
+
+add("backtrack", function(yeet)
+	
+	local function RecordMovement(plr, duration)
+		local thread = coroutine.create(function()
+			while true do
+				task.wait(duration)
+				local pos = plr.Character.HumanoidRootPart.CFrame
+				local part = Inst("Part")
+				part.Parent = Services.Workspace
+				part.CFrame = pos
+				part.Anchored = true
+				part.CanCollide = false
+				part.Size = plr.Character.HumanoidRootPart.Size
+				Services.Debris:AddItem(part, duration)
+				
+				part.Touched:Connect(function(hit)
+					local plr = Services.Players:GetPlayerFromCharacter(hit.Parent)
+					if plr and plr.Character then
+						firetouchinterest(hit, plr.Character.HumanoidRootPart, 0)
+					end
+				end)
+			end
+		end)
+		coroutine.resume(thread)
+	end
+	
+	for k,v in pairs (yeet[1]) do
+		RecordMovement(v, 0.4)
+		RecordMovement(v, 0.2)
+		RecordMovement(v, 0.6)
+	end
+end, {}, "idk", {"player"})
+
+add("fakelag",function(yeet)
+	Services.NetworkSettings.IncomingReplicationLag = yeet[1] * 1000
+end,{},"increases your ping (1 = 1000)", {"number"})
+
+add("fog", function(yeet)
+	Services.Lighting.FogStart = yeet[1]
+	Services.Lighting.FogEnd = yeet[2] or Services.Lighting.FogEnd
+end,{}, "changes your fog start and fog end", {"number","number"})
+
+add("slopeangle",function(yeet)
+	character.Humanoid.MaxSlopeAngle = yeet[1]
+end,{},"changes your max slope angle", {"number"})
+
+add("joinlogs", function()
+	connections["joinlogs"] = Services.Players.PlayerAdded:Connect(function(plr)
+		Notify ("<font color='rgb(0,255,94)'>"..plr.Name.." joined</font>", 4)
+	end)
+end,{},"notifies when a player joins", {})
